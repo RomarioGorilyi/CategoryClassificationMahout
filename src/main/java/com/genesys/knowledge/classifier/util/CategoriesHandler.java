@@ -1,5 +1,6 @@
 package com.genesys.knowledge.classifier.util;
 
+import com.genesys.knowledge.classifier.exception.CategoryNotFoundException;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import lombok.Getter;
@@ -19,13 +20,7 @@ public class CategoriesHandler {
      * CategoriesOrderNumbers is a {@link Map} collection that contains {@link String} category id as a key
      * and {@link Integer} order number of a category in a map as a value.
      */
-    private static Map<String, Integer> categoryOrderNumbers;
-
-    public CategoriesHandler() {
-        if (categoryOrderNumbers == null) {
-            categoryOrderNumbers = new HashMap();
-        }
-    }
+    private static Map<String, Integer> categoryOrderNumbers = new HashMap<>();
 
     /**
      * Initializes {@code this} {@link CategoriesHandler} populating {@link #categoryOrderNumbers}
@@ -81,11 +76,22 @@ public class CategoriesHandler {
         }
     }
 
-    public int getCategoryOrderNumber(Category category) {
-        return categoryOrderNumbers.get(category.getId());
+    public int getCategoryOrderNumber(Category category) throws CategoryNotFoundException {
+        if (categoryOrderNumbers.containsKey(category.getId())) {
+            return categoryOrderNumbers.get(category.getId());
+        } else {
+            throw new CategoryNotFoundException(category); // TODO ask if architecturally right decision
+        }
     }
 
-    public int getCategoriesNumber() {
+    public int getCategoriesQuantity() {
         return categoryOrderNumbers.size();
+    }
+
+    // TODO remove after debug
+    public void showCategoryOrderNumbers() {
+        for (Map.Entry<String, Integer> entry : categoryOrderNumbers.entrySet()) {
+            System.out.println(entry.getKey() + "=" + entry.getValue());
+        }
     }
 }
