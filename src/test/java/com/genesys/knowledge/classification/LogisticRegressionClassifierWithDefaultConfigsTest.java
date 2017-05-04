@@ -1,4 +1,4 @@
-package com.genesys.knowledge.classifier;
+package com.genesys.knowledge.classification;
 
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
@@ -16,30 +16,27 @@ public class LogisticRegressionClassifierWithDefaultConfigsTest {
 
     @Before
     public void initClassifier() {
-        classifier = new LogisticRegressionClassifier();
+        classifier = new LogisticRegressionClassifier(2, 5);
     }
 
     @Test
     public void testTrainClassifierWithTwoDocs() {
         Category category1 = new Category("category1");
-        Document document1 = new Document("Test text1");
+        Document document1 = new Document("Test text to teach machine.");
         trainClassifier(document1, category1);
 
         Category category2 = new Category("category2");
-        Document document2 = new Document("Test text2");
+        Document document2 = new Document("Real document that can be really applied.");
         trainClassifier(document2, category2);
 
-        double categoryProbability1 = classifier.calculateCategoryProbability(document1, category1);
-        System.out.println("Document1: category1 probability: " + categoryProbability1);
-        String expectedDocument1Category = category1.getId();
-        String actualDocument1Category = classifier.calculateMostRelevantCategory(document1);
-        assertEquals(expectedDocument1Category, actualDocument1Category);
+        String expectedAlreadyTrainedDocumentCategory = category1.getId();
+        String actualAlreadyTrainedDocumentCategory = classifier.calculateMostRelevantCategory(document1);
+        assertEquals(expectedAlreadyTrainedDocumentCategory, actualAlreadyTrainedDocumentCategory);
 
-        double categoryProbability2 = classifier.calculateCategoryProbability(document2, category2);
-        System.out.println("Document2: category2 probability: " + categoryProbability2);
-        String expectedDocument2Category = category2.getId();
-        String actualDocument2Category = classifier.calculateMostRelevantCategory(document2);
-        assertEquals(expectedDocument2Category, actualDocument2Category);
+        Document testDocument = new Document("Teaching machines is our hobby");
+        String expectedTestDocumentCategory = category1.getId();
+        String actualTestDocumentCategory = classifier.calculateMostRelevantCategory(testDocument);
+        assertEquals(expectedTestDocumentCategory, actualTestDocumentCategory);
     }
 
     @Test
@@ -48,11 +45,10 @@ public class LogisticRegressionClassifierWithDefaultConfigsTest {
         Document document = new Document("Test text");
         trainClassifier(document, category);
 
-        double categoryProbability = classifier.calculateCategoryProbability(document, category);
-        System.out.println("Category probability: " + categoryProbability);
-        String expectedDocumentCategory = category.getId();
-        String actualDocumentCategory = classifier.calculateMostRelevantCategory(document);
-        assertEquals(expectedDocumentCategory, actualDocumentCategory);
+        Document testDocument = new Document("Teaching machines is our hobby");
+        String expectedTestDocumentCategory = category.getId();
+        String actualTestDocumentCategory = classifier.calculateMostRelevantCategory(testDocument);
+        assertEquals(expectedTestDocumentCategory, actualTestDocumentCategory);
     }
 
     @Test
