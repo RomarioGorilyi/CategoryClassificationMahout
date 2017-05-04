@@ -3,7 +3,7 @@ package com.genesys.knowledge.classifier.util;
 import com.genesys.knowledge.classifier.exception.CategoryNotFoundException;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
-import lombok.Getter;
+import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
@@ -16,7 +16,7 @@ import java.util.Set;
  * Created by rhorilyi on 25.04.2017.
  */
 @Slf4j
-public class CategoriesHandler {
+public class CategoryHandler {
 
     /**
      * CategoriesOrderNumbers is a {@link Map} collection that contains {@link String} category id as a key
@@ -29,34 +29,17 @@ public class CategoriesHandler {
      */
     public void initHandler(Document[] documents) {
         for (Document document : documents) {
-            ArrayList<Category> categories = document.getCategories();
-            for (Category category : categories) {
-                this.addCategory(category);
-            }
+            initHandler(document);
         }
     }
 
-    public static void serializeCategoriesOrderNumbers() {
-        String filePath = "src/main/resources/categoryOrderNumbers.mahout";
-        try (ObjectOutputStream outputStream =
-                     new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(filePath)))) {
-            outputStream.writeObject(categoryOrderNumbers);
-        } catch (IOException e) {
-            log.error(e.getMessage());
-            e.printStackTrace(); // TODO debug mode (remove lately)
-        }
-    }
-
-    public static void deserializeCategoriesOrderNumbers() {
-        String filePath = "src/main/resources/categoryOrderNumbers.mahout";
-        try (ObjectInputStream inputStream =
-                     new ObjectInputStream(new BufferedInputStream(new FileInputStream(filePath)))) {
-            categoryOrderNumbers = (HashMap) inputStream.readObject();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            log.error(e.getMessage());
-            e.printStackTrace(); // TODO debug mode (remove lately)
+    /**
+     * Initializes {@code this} CategoriesHandler with categories retrieved from the specified document.
+     */
+    public void initHandler(Document document) {
+        ArrayList<Category> categories = document.getCategories();
+        for (Category category : categories) {
+            this.addCategory(category);
         }
     }
 
@@ -89,13 +72,6 @@ public class CategoriesHandler {
         return categoryOrderNumbers.size();
     }
 
-    // TODO remove after debug
-    public void showCategoryOrderNumbers() {
-        for (Map.Entry<String, Integer> entry : categoryOrderNumbers.entrySet()) {
-            System.out.println(entry.getKey() + "=" + entry.getValue());
-        }
-    }
-
     /**
      * Gets id of the {@link Category} with the specified order number in {@code this} CategoriesHandler.
      *
@@ -114,5 +90,34 @@ public class CategoriesHandler {
         }
 
         return categoryId;
+    }
+
+    public static void serializeCategoryOrderNumbers() {
+        String filePath = "src/main/resources/category/category-order-numbers.mahout";
+        try (ObjectOutputStream outputStream =
+                     new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(filePath)))) {
+            outputStream.writeObject(categoryOrderNumbers);
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    public static void deserializeCategoryOrderNumbers() {
+        String filePath = "src/main/resources/category/category-order-numbers.mahout";
+        try (ObjectInputStream inputStream =
+                     new ObjectInputStream(new BufferedInputStream(new FileInputStream(filePath)))) {
+            categoryOrderNumbers = (HashMap) inputStream.readObject();
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        } catch (ClassNotFoundException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    /**
+     * Clears handler replacing all categories with a new empty container.
+     */
+    public void clear() {
+        categoryOrderNumbers = Maps.newHashMap();
     }
 }

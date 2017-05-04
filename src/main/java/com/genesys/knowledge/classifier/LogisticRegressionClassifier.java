@@ -3,8 +3,7 @@ package com.genesys.knowledge.classifier;
 import com.genesys.knowledge.classifier.defaults.ClassifierDefaults;
 import com.genesys.knowledge.classifier.defaults.LogisticRegressionDefaults;
 import com.genesys.knowledge.classifier.exception.CategoryNotFoundException;
-import com.genesys.knowledge.classifier.util.CategoriesHandler;
-import com.genesys.knowledge.classifier.util.DocumentsHandler;
+import com.genesys.knowledge.classifier.util.CategoryHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import lombok.Getter;
@@ -19,7 +18,6 @@ import org.apache.mahout.vectorizer.encoders.FeatureVectorEncoder;
 import org.apache.mahout.vectorizer.encoders.StaticWordValueEncoder;
 
 import java.io.*;
-import java.util.Arrays;
 
 /**
  * Created by rhorilyi on 25.04.2017.
@@ -28,14 +26,14 @@ import java.util.Arrays;
 public class LogisticRegressionClassifier extends AbstractClassifier {
 
     @Getter
-    private CategoriesHandler categoriesHandler;
+    private CategoryHandler categoryHandler;
     private OnlineLogisticRegression lr;
 
     private final ConstantValueEncoder interceptEncoder = new ConstantValueEncoder("intercept");
     private final FeatureVectorEncoder featureEncoder = new StaticWordValueEncoder("feature");
 
     public LogisticRegressionClassifier() {
-        categoriesHandler = new CategoriesHandler();
+        categoryHandler = new CategoryHandler();
 
         lr = new OnlineLogisticRegression(
                 ClassifierDefaults.DEFAULT_NUM_CATEGORIES,
@@ -49,11 +47,11 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
     }
 
     public LogisticRegressionClassifier(Document[] documents) {
-        categoriesHandler = new CategoriesHandler();
-        categoriesHandler.initHandler(documents);
+        categoryHandler = new CategoryHandler();
+        categoryHandler.initHandler(documents);
 
         lr = new OnlineLogisticRegression(
-                categoriesHandler.getCategoriesQuantity(),
+                categoryHandler.getCategoriesQuantity(),
                 1000,
                 new L1())
                 .learningRate(LogisticRegressionDefaults.DEFAULT_LR_LEARNING_RATE)
@@ -64,36 +62,81 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
     }
 
     public LogisticRegressionClassifier(byte[] modelData) {
-        categoriesHandler = new CategoriesHandler();
+        categoryHandler = new CategoryHandler();
         deserializeModel(modelData);
     }
 
+    /**
+     * Trains {@code this} classifier model with the specified {@link Document},
+     * if the specified {@link Document} is valid and has at least 1 category.
+     *
+     * @return {@code this} LogisticRegressionClassifier
+     */
     @Override
-    public void train(Document document) {
-        if (document == null || document.getBody().isEmpty() || document.getCategories().length == 0) {
-            return;
-        }
-
-        for (Category category : document.getCategories()) {
-            int categoryOrderNumber;
-            try {
-                categoryOrderNumber = categoriesHandler.getCategoryOrderNumber(category);
-            } catch (CategoryNotFoundException e) {
-                categoriesHandler.addCategory(category);
-                categoryOrderNumber = categoriesHandler.getCategoriesQuantity() - 1;
+    public LogisticRegressionClassifier train(Document document) {
+        if (isDocumentValid(document) && document.getCategories().size() != 0) {
+            for (Category category : document.getCategories()) {
+                trainOnlineLogisticRegression(document, category);
             }
-            lr.train(categoryOrderNumber, getFeatureVector(document));
+        }
+        return this;
+    }
+
+    /**
+     * Trains {@code this} classifier model with the specified {@link Document} and {@link Category},
+     * if the specified {@link Document} is valid.
+     *
+     * @return {@code this} LogisticRegressionClassifier
+     */
+    public LogisticRegressionClassifier train(Document document, Category category) {
+        if (isDocumentValid(document)) {
+            trainOnlineLogisticRegression(document, category);
+        }
+        return this;
+    }
+
+    private boolean isDocumentValid(Document document) {
+        return !(document == null || document.getText().isEmpty());
+    }
+
+    private void trainOnlineLogisticRegression(Document document, Category category) {
+        int categoryOrderNumber;
+        try {
+            categoryOrderNumber = categoryHandler.getCategoryOrderNumber(category);
+        } catch (CategoryNotFoundException e) {
+            categoryHandler.addCategory(category);
+            categoryOrderNumber = categoryHandler.getCategoriesQuantity() - 1;
+        }
+        lr.train(categoryOrderNumber, getFeatureVector(document));
+    }
+
+    /**
+     * Calculates probability that the specified {@link Document} has the specified {@link Category}.
+     * If {@code this} LogisticRegressionClassifier's {@link #categoryHandler} doesn't contain the category,
+     * return 0.
+     *
+     * @param document document to classify
+     * @param category category to check its presence probability in the specified document
+     * @return probability as {@code double} value
+     */
+    public double calculateCategoryProbability(Document document, Category category) {
+        Vector vector = lr.classifyFull(getFeatureVector(document));
+        try {
+            return lr.classifyFull(getFeatureVector(document)).get(categoryHandler.getCategoryOrderNumber(category));
+        } catch (CategoryNotFoundException e) {
+            return 0;
         }
     }
 
-    // TODO think over: maybe remove into test class
-    public double calculateCategoryProbability(Document document, Category category) throws CategoryNotFoundException {
-        Vector vector = lr.classifyFull(getFeatureVector(document));
-        return lr.classifyFull(getFeatureVector(document)).get(categoriesHandler.getCategoryOrderNumber(category));
-    }
-
-    public int classifyBestCategory(Document document) {
-        return lr.classifyFull(getFeatureVector(document)).maxValueIndex();
+    /**
+     * Calculates id of the most relevant {@link Category} of the specified document which is classified.
+     *
+     * @param document document to classify
+     * @return {@code String} category id
+     */
+    public String calculateMostRelevantCategory(Document document) {
+        int index = lr.classifyFull(getFeatureVector(document)).maxValueIndex();
+        return categoryHandler.getCategoryId(index);
     }
 
     private RandomAccessSparseVector getFeatureVector(Document document) {
@@ -103,7 +146,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         // Look at the regression graph on the link below to see why we need the intercept.
         // http://statistiksoftware.blogspot.nl/2013/01/why-we-need-intercept.html
 
-        String[] words = document.getBody()
+        String[] words = document.getText()
                 .replaceAll("[^\\w]", "")
                 .toLowerCase()
                 .split("\\s+");
@@ -137,64 +180,5 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
-    }
-
-    public static void main(String[] args) {
-        Document[] documents = DocumentsHandler.retrieveDocuments();
-        Document[] trainDocuments = Arrays.copyOfRange(documents, 0, 2 * documents.length / 3);
-        Document[] testDocuments = Arrays.copyOfRange(documents, 2 * documents.length / 3, documents.length);
-
-        int[] correct = new int[testDocuments.length + 1];
-        for (int run = 0; run < 200; run++) {
-            LogisticRegressionClassifier classifier = new LogisticRegressionClassifier(trainDocuments);
-            // train the model
-            for (int trainLoop = 0; trainLoop < 30; trainLoop++) {
-                for (Document trainDoc : trainDocuments) {
-                    classifier.train(trainDoc);
-                }
-            }
-
-            // test the model
-            // TODO improve evaluation to check all categories of documents
-            int x = 0;
-            CategoriesHandler categoriesHandler = classifier.getCategoriesHandler();
-            //int[] count = new int[categoriesHandler.getCategoriesQuantity()];
-            for (Document testDoc : testDocuments) {
-                for (Category category : testDoc.getCategories()) {
-                    categoriesHandler.addCategory(category);
-                }
-                int bestCategory = classifier.classifyBestCategory(testDoc);
-                //count[bestCategory]++;
-                Category[] categories = testDoc.getCategories();
-                for (Category category : categories) {
-                    try {
-                        if (bestCategory == categoriesHandler.getCategoryOrderNumber(category)) {
-                            x++;
-                            break;
-                        }
-                    } catch (CategoryNotFoundException e) {
-                        e.printStackTrace(); // TODO remove after debug
-                        log.error(e.getMessage());
-                    }
-                }
-            }
-            System.out.println(x);
-            correct[x]++;
-        }
-        System.out.println(Arrays.toString(correct));
-
-        // assess accuracy
-        for (int i = 0; i < Math.floor(0.95 * testDocuments.length); i++) {
-            if (correct[i] != 0) {
-                System.out.println("correct[" + i + "]=" + correct[i]);
-            }
-        }
-
-        if (correct[testDocuments.length - 1] != 0) {
-            System.out.println("100%% accuracy detected: " + correct[testDocuments.length - 1] + " times");
-        }
-
-        LogisticRegressionClassifier classifier = new LogisticRegressionClassifier(documents);
-
     }
 }
