@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbstractClassifier {
 
-    public abstract void train(Document queryTerms);
+    public abstract AbstractClassifier train(Document queryTerms);
 
     public abstract byte[] serializeModel();
 
