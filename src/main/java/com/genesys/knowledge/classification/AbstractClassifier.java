@@ -1,6 +1,5 @@
-package com.genesys.knowledge.classifier;
+package com.genesys.knowledge.classification;
 
-import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import lombok.extern.slf4j.Slf4j;
 

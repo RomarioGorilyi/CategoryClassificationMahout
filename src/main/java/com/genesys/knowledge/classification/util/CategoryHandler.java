@@ -1,6 +1,6 @@
-package com.genesys.knowledge.classifier.util;
+package com.genesys.knowledge.classification.util;
 
-import com.genesys.knowledge.classifier.exception.CategoryNotFoundException;
+import com.genesys.knowledge.classification.exception.CategoryNotFoundException;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import com.google.common.collect.Maps;

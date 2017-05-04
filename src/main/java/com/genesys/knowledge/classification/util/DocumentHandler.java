@@ -1,5 +1,6 @@
-package com.genesys.knowledge.classifier.util;
+package com.genesys.knowledge.classification.util;
 
+import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import com.genesys.knowledge.domain.ResponseMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 /**
  * Created by rhorilyi on 26.04.2017.
@@ -82,15 +81,30 @@ public class DocumentHandler {
         return resultTerms;
     }
 
-    public static ArrayList<Integer> findTermsNumberPerDocument() {
-        ArrayList<Integer> termsNumber = new ArrayList<>();
+    public static int findMaxNumberOfTerms(Document[] documents) {
+        int maxNumberOfTerms = 0;
 
-        Document[] documents = retrieveDocuments();
         for (Document document : documents) {
             List<String> terms = convertDocumentToTerms(document);
-            termsNumber.add(terms.size());
+            int termsNumber = terms.size();
+            if (termsNumber > maxNumberOfTerms) {
+                maxNumberOfTerms = termsNumber;
+            }
         }
 
-        return termsNumber;
+        return maxNumberOfTerms;
+    }
+
+    public static int findUniqueCategoriesNumber(Document[] documents) {
+        Set<String> uniqueCategories = new HashSet<>();
+
+        for (Document document : documents) {
+            ArrayList<Category> categories = document.getCategories();
+            for (Category category : categories) {
+                uniqueCategories.add(category.getId());
+            }
+        }
+
+        return uniqueCategories.size();
     }
 }

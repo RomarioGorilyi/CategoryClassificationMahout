@@ -1,4 +1,4 @@
-package com.genesys.knowledge.classifier.util;
+package com.genesys.knowledge.classification.util;
 
 import com.genesys.knowledge.domain.Document;
 import org.junit.Test;
@@ -7,8 +7,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.genesys.knowledge.classifier.util.DocumentHandler.convertDocumentToTerms;
-import static com.genesys.knowledge.classifier.util.DocumentHandler.findTermsNumberPerDocument;
+import static com.genesys.knowledge.classification.util.DocumentHandler.*;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
@@ -18,13 +17,18 @@ import static org.junit.Assert.assertThat;
 public class DocumentHandlerTest {
 
     @Test
-    public void testFindTermsNumberPerDocument() {
-        System.out.println(findTermsNumberPerDocument().toString());
+    public void testFindMaxNumberOfTerms() {
+        System.out.println("Max number of terms: " + findMaxNumberOfTerms(retrieveDocuments()));
+    }
+
+    @Test
+    public void testFindUniqueCategoriesNumber() {
+        System.out.println("Unique categories number: " + findUniqueCategoriesNumber(retrieveDocuments()));
     }
 
     @Test
     public void testConvertDocumentToTerms() {
-        Document document = new Document("My test text, which is a good enough text sample, is running...");
+        Document document = new Document("My test text, which is a good enough text sample, is running out...");
         List<String> actualTerms = convertDocumentToTerms(document);
 
         List<String> expectedTerms = Arrays.asList("test", "text", "good", "enough", "text", "sampl", "run");

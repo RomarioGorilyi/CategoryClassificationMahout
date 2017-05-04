@@ -1,6 +1,5 @@
-package com.genesys.knowledge.classifier.util;
+package com.genesys.knowledge.classification.util;
 
-import com.genesys.knowledge.classifier.util.CategoryHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import org.junit.Before;

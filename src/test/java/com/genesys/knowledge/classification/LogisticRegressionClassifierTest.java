@@ -1,6 +1,6 @@
-package com.genesys.knowledge.classifier;
+package com.genesys.knowledge.classification;
 
-import com.genesys.knowledge.classifier.util.DocumentHandler;
+import com.genesys.knowledge.classification.util.DocumentHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class LogisticRegressionClassifierTest {
     private int testClassificationModel(LogisticRegressionClassifier classifier, Document[] documents) {
         // TODO improve evaluation to check all categories of documents
         int successfulPredictionNumberPerLoop = 0;
-        com.genesys.knowledge.classifier.util.CategoryHandler categoryHandler = classifier.getCategoryHandler();
+        com.genesys.knowledge.classification.util.CategoryHandler categoryHandler = classifier.getCategoryHandler();
         for (Document document : documents) {
             for (Category category : document.getCategories()) {
                 categoryHandler.addCategory(category);

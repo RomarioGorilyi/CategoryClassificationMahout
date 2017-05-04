@@ -1,4 +1,4 @@
-package com.genesys.knowledge.classifier.exception;
+package com.genesys.knowledge.classification.exception;
 
 import com.genesys.knowledge.domain.Category;
 

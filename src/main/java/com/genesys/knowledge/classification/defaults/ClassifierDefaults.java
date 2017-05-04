@@ -1,4 +1,4 @@
-package com.genesys.knowledge.classifier.defaults;
+package com.genesys.knowledge.classification.defaults;
 
 /**
  * Created by rhorilyi on 25.04.2017.
