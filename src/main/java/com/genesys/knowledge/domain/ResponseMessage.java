@@ -14,4 +14,12 @@ public class ResponseMessage {
 
     private String status;
     private ResponseData data;
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Data
+    @NoArgsConstructor
+    public class ResponseData {
+
+        private Document[] documents;
+    }
 }

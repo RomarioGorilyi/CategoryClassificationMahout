@@ -12,7 +12,7 @@ import java.util.Set;
  * Created by rhorilyi on 26.04.2017.
  */
 @AllArgsConstructor
-public abstract class DocumentTerms {
+public class DocumentTerms {
 
     @Getter @Setter
     private String id;
@@ -22,6 +22,4 @@ public abstract class DocumentTerms {
     public DocumentTerms() {
         terms = new HashSet<>();
     }
-
-    public abstract void retrieveTermsFromText();
 }

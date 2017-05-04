@@ -7,8 +7,10 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by rhorilyi on 25.04.2017.
@@ -23,12 +25,11 @@ public class CategoriesHandler {
     private static Map<String, Integer> categoryOrderNumbers = new HashMap<>();
 
     /**
-     * Initializes {@code this} {@link CategoriesHandler} populating {@link #categoryOrderNumbers}
-     * with categories retrieved from the specified documents.
+     * Initializes {@code this} CategoriesHandler with categories retrieved from the specified documents.
      */
     public void initHandler(Document[] documents) {
         for (Document document : documents) {
-            Category[] categories = document.getCategories();
+            ArrayList<Category> categories = document.getCategories();
             for (Category category : categories) {
                 this.addCategory(category);
             }
@@ -60,8 +61,8 @@ public class CategoriesHandler {
     }
 
     /**
-     * Adds the specified category to the {@link #categoryOrderNumbers} {@code Map<String, Integer>}
-     * in case there is no such a category in the map, otherwise returns {@code false}.
+     * Adds the specified category to {@code this} CategoriesHandler and returns {@code true}
+     * in case there is no such a category in the map, otherwise returns {@code false} without adding.
      *
      * @param category {@code Category} instance to add to the map
      * @return {@code true} if there's no such a category in the map, otherwise - {@code false}
@@ -93,5 +94,25 @@ public class CategoriesHandler {
         for (Map.Entry<String, Integer> entry : categoryOrderNumbers.entrySet()) {
             System.out.println(entry.getKey() + "=" + entry.getValue());
         }
+    }
+
+    /**
+     * Gets id of the {@link Category} with the specified order number in {@code this} CategoriesHandler.
+     *
+     * @param categoryOrderNumber order number of the {@link Category} in {@code this} CategoriesHandler
+     * @return {@code String} id of the category
+     */
+    public String getCategoryId(int categoryOrderNumber) {
+        String categoryId = null;
+
+        Set<Map.Entry<String, Integer>> entrySet = categoryOrderNumbers.entrySet();
+        for (Map.Entry<String, Integer> entry : entrySet) {
+            if (categoryOrderNumber == entry.getValue()) {
+                categoryId = entry.getKey();
+                break;
+            }
+        }
+
+        return categoryId;
     }
 }
