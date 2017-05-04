@@ -1,9 +1,10 @@
-package com.genesys.knowledge.classifier;
+package com.genesys.knowledge.classification;
 
-import com.genesys.knowledge.classifier.defaults.ClassifierDefaults;
-import com.genesys.knowledge.classifier.defaults.LogisticRegressionDefaults;
-import com.genesys.knowledge.classifier.exception.CategoryNotFoundException;
-import com.genesys.knowledge.classifier.util.CategoryHandler;
+import com.genesys.knowledge.classification.defaults.ClassifierDefaults;
+import com.genesys.knowledge.classification.defaults.LogisticRegressionDefaults;
+import com.genesys.knowledge.classification.exception.CategoryNotFoundException;
+import com.genesys.knowledge.classification.util.CategoryHandler;
+import com.genesys.knowledge.classification.util.DocumentHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import lombok.Getter;
@@ -18,6 +19,7 @@ import org.apache.mahout.vectorizer.encoders.FeatureVectorEncoder;
 import org.apache.mahout.vectorizer.encoders.StaticWordValueEncoder;
 
 import java.io.*;
+import java.util.List;
 
 /**
  * Created by rhorilyi on 25.04.2017.
@@ -46,13 +48,24 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
                 .decayExponent(LogisticRegressionDefaults.DEFAULT_LR_DECAY_EXPONENT);
     }
 
+    public LogisticRegressionClassifier(int categoriesNumber, int featuresNumber) {
+        categoryHandler = new CategoryHandler();
+
+        lr = new OnlineLogisticRegression(categoriesNumber, featuresNumber, new L1())
+                .learningRate(LogisticRegressionDefaults.DEFAULT_LR_LEARNING_RATE)
+                .alpha(LogisticRegressionDefaults.DEFAULT_LR_ALPHA)
+                .lambda(LogisticRegressionDefaults.DEFAULT_LR_LAMBDA)
+                .stepOffset(LogisticRegressionDefaults.DEFAULT_LR_STEP_OFFSET)
+                .decayExponent(LogisticRegressionDefaults.DEFAULT_LR_DECAY_EXPONENT);
+    }
+
     public LogisticRegressionClassifier(Document[] documents) {
         categoryHandler = new CategoryHandler();
         categoryHandler.initHandler(documents);
 
         lr = new OnlineLogisticRegression(
-                categoryHandler.getCategoriesQuantity(),
-                1000,
+                categoryHandler.getCategoriesQuantity(), // TODO or DocumentHandler.findUniqueCategoriesNumber()
+                DocumentHandler.findMaxNumberOfTerms(documents),
                 new L1())
                 .learningRate(LogisticRegressionDefaults.DEFAULT_LR_LEARNING_RATE)
                 .alpha(LogisticRegressionDefaults.DEFAULT_LR_ALPHA)
@@ -146,12 +159,9 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         // Look at the regression graph on the link below to see why we need the intercept.
         // http://statistiksoftware.blogspot.nl/2013/01/why-we-need-intercept.html
 
-        String[] words = document.getText()
-                .replaceAll("[^\\w]", "")
-                .toLowerCase()
-                .split("\\s+");
-        for (String word : words) {
-            featureEncoder.addToVector(word, 1, outputVector);
+        List<String> terms = DocumentHandler.convertDocumentToTerms(document);
+        for (String term : terms) {
+            featureEncoder.addToVector(term, 1, outputVector);
         }
 
         return outputVector;
