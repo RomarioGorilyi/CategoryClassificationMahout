@@ -1,5 +1,6 @@
 package com.genesys.knowledge.classification;
 
+import com.genesys.knowledge.classification.classifier.LogisticRegressionClassifier;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import org.junit.Before;
@@ -10,13 +11,14 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by rhorilyi on 28.04.2017.
  */
-public class LogisticRegressionClassifierWithDefaultConfigsTest {
+public class LrClassifierWithFixedCategoriesAndFeaturesNumbersTest {
 
     private LogisticRegressionClassifier classifier;
 
     @Before
-    public void initClassifier() {
-        classifier = new LogisticRegressionClassifier(2, 5);
+    public void prepareClassifier() {
+        classifier = new LogisticRegressionClassifier(2, 7);
+        classifier.getCategoryHandler().clear();
     }
 
     @Test

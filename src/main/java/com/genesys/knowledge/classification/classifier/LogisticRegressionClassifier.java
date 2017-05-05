@@ -59,7 +59,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
                 .decayExponent(LogisticRegressionDefaults.DEFAULT_LR_DECAY_EXPONENT);
     }
 
-    public LogisticRegressionClassifier(Document[] documents) {
+    public LogisticRegressionClassifier(List<Document> documents) {
         categoryHandler = new CategoryHandler();
         categoryHandler.initHandler(documents);
 
