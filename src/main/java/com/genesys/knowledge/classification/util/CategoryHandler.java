@@ -4,13 +4,11 @@ import com.genesys.knowledge.classification.exception.CategoryNotFoundException;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import com.google.common.collect.Maps;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by rhorilyi on 25.04.2017.
@@ -22,12 +20,13 @@ public class CategoryHandler {
      * CategoriesOrderNumbers is a {@link Map} collection that contains {@link String} category id as a key
      * and {@link Integer} order number of a category in a map as a value.
      */
+    @Getter
     private static Map<String, Integer> categoryOrderNumbers = new HashMap<>();
 
     /**
      * Initializes {@code this} CategoriesHandler with categories retrieved from the specified documents.
      */
-    public void initHandler(Document[] documents) {
+    public void initHandler(List<Document> documents) {
         for (Document document : documents) {
             initHandler(document);
         }

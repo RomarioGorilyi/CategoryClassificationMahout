@@ -24,7 +24,7 @@ import java.util.*;
 @Slf4j
 public class DocumentHandler {
 
-    public static Document[] retrieveDocuments() {
+    public static List<Document> retrieveDocuments() {
         String url = "http://gks-dep-stbl:9092/gks-server/v2/knowledge/tenants/1/langs/en_US/documents?size=1000";
 
         HttpHeaders headers = new HttpHeaders();
@@ -81,7 +81,7 @@ public class DocumentHandler {
         return resultTerms;
     }
 
-    public static int findMaxNumberOfTerms(Document[] documents) {
+    public static int findMaxNumberOfTerms(List<Document> documents) {
         int maxNumberOfTerms = 0;
 
         for (Document document : documents) {
@@ -95,7 +95,7 @@ public class DocumentHandler {
         return maxNumberOfTerms;
     }
 
-    public static int findUniqueCategoriesNumber(Document[] documents) {
+    public static int findUniqueCategoriesNumber(List<Document> documents) {
         Set<String> uniqueCategories = new HashSet<>();
 
         for (Document document : documents) {

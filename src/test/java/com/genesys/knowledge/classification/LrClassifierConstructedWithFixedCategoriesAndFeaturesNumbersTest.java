@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Created by rhorilyi on 28.04.2017.
  */
-public class LrClassifierWithFixedCategoriesAndFeaturesNumbersTest {
+public class LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest {
 
     private LogisticRegressionClassifier classifier;
 

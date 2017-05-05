@@ -1,4 +1,4 @@
-package com.genesys.knowledge.classification;
+package com.genesys.knowledge.classification.classifier;
 
 import com.genesys.knowledge.domain.Document;
 import lombok.extern.slf4j.Slf4j;

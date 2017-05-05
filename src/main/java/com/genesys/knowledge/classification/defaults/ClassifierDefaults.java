@@ -5,6 +5,6 @@ package com.genesys.knowledge.classification.defaults;
  */
 public class ClassifierDefaults {
 
-	public static final int DEFAULT_NUM_FEATURES = 10;
-	public static final int DEFAULT_NUM_CATEGORIES = 10;
+	public static final int DEFAULT_NUM_FEATURES = 100;
+	public static final int DEFAULT_NUM_CATEGORIES = 15;
 }

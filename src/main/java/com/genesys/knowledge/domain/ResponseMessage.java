@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
  * Created by rhorilyi on 25.04.2017.
  */
@@ -20,6 +22,6 @@ public class ResponseMessage {
     @NoArgsConstructor
     public class ResponseData {
 
-        private Document[] documents;
+        private List<Document> documents;
     }
 }

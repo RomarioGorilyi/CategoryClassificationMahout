@@ -9,5 +9,5 @@ public class LogisticRegressionDefaults {
     public static final double DEFAULT_LR_ALPHA = 1.0;
     public static final double DEFAULT_LR_LAMBDA = 0.000001;
     public static final int DEFAULT_LR_STEP_OFFSET = 10000;
-    public static final double DEFAULT_LR_DECAY_EXPONENT = 0.2;
+    public static final double DEFAULT_LR_DECAY_EXPONENT = 0.9;
 }

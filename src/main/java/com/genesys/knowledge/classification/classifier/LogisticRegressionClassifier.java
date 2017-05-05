@@ -1,4 +1,4 @@
-package com.genesys.knowledge.classification;
+package com.genesys.knowledge.classification.classifier;
 
 import com.genesys.knowledge.classification.defaults.ClassifierDefaults;
 import com.genesys.knowledge.classification.defaults.LogisticRegressionDefaults;
@@ -152,8 +152,8 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         return categoryHandler.getCategoryId(index);
     }
 
-    private RandomAccessSparseVector getFeatureVector(Document document) {
-        RandomAccessSparseVector outputVector = new RandomAccessSparseVector(lr.numFeatures());
+    private Vector getFeatureVector(Document document) {
+        Vector outputVector = new RandomAccessSparseVector(lr.numFeatures());
 
         interceptEncoder.addToVector("1", outputVector); // output[0] is the intercept term
         // Look at the regression graph on the link below to see why we need the intercept.
