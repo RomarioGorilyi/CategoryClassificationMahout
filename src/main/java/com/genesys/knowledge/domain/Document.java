@@ -2,10 +2,12 @@ package com.genesys.knowledge.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.genesys.knowledge.classification.util.DocumentHandler;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by rhorilyi on 25.04.2017.
@@ -19,15 +21,19 @@ public class Document {
     @Getter @Setter
     private String text;
     @Getter @Setter
-    private ArrayList<Category> categories;
+    private List<Category> categories;
+    @Getter @Setter
+    private List<String> terms;
 
     public Document() {
         categories = new ArrayList<>();
         text = "";
+        terms = new ArrayList<>();
     }
 
     public Document(String text) {
         this.text = text;
+        terms = DocumentHandler.convertTextToTerms(text);
     }
 
     public void addCategory(Category category) {

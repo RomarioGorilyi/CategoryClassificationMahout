@@ -4,6 +4,7 @@ import com.genesys.knowledge.classification.classifier.LogisticRegressionClassif
 import com.genesys.knowledge.classification.util.DocumentHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.security.SecureRandom;
@@ -14,17 +15,37 @@ import java.util.*;
  */
 public class LrClassifierConstructedWithDocumentsTest {
 
+    private List<Document> documents;
+    private String urlTemplate = "http://gks-dep-stbl:9092/gks-server/v2/knowledge/tenants/1/langs/en_US/documents?size=%d&from=%d";
+
+    @Before
+    public void retrieveDocuments() {
+        documents = new ArrayList<>(1000);
+        for (int i = 0; i < 3; i++) {
+            String url = String.format(urlTemplate, 200, i * 200);
+            documents.addAll(DocumentHandler.retrieveDocuments(url));
+        }
+
+        initDocumentsTerms();
+    }
+
     @Test
     public void testClassifier() {
-        List<Document> documents = DocumentHandler.retrieveDocuments();
         Collections.shuffle(documents, new SecureRandom());
-        List<Document> trainingDocuments = documents.subList(0, 2 * documents.size() / 3);
-        List<Document> testDocuments = documents.subList(2 * documents.size() / 3, documents.size());
+        List<Document> trainingDocuments = documents.subList(0, 4 * documents.size() / 5);
+        List<Document> testDocuments = documents.subList(4 * documents.size() / 5, documents.size());
 
-        int[] trainingLoopsNumbers = {10/*, 30, 50, 100*/};
+        int[] trainingLoopsNumbers = {10, 30, 50, 100};
         for (int i = 0; i < trainingLoopsNumbers.length; i++) {
             System.out.println("Number of training loops: " + trainingLoopsNumbers[i]);
             test(trainingDocuments, testDocuments, trainingLoopsNumbers[i]);
+        }
+    }
+
+    private void initDocumentsTerms() {
+        for (Document document : documents) {
+            List<String> terms = DocumentHandler.convertTextToTerms(document.getText());
+            document.setTerms(terms);
         }
     }
 
@@ -66,7 +87,7 @@ public class LrClassifierConstructedWithDocumentsTest {
                 categoryHandler.addCategory(category);
             }
             String mostRelevantCategory = classifier.calculateMostRelevantCategory(document);
-            ArrayList<Category> categories = document.getCategories();
+            List<Category> categories = document.getCategories();
             for (Category category : categories) {
                 if (mostRelevantCategory.equals(category.getId())) {
                     successfulPredictionNumberPerLoop++;
