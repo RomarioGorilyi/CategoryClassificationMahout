@@ -1,6 +1,5 @@
-package com.genesys.knowledge.classification;
+package com.genesys.knowledge.classification.classifier;
 
-import com.genesys.knowledge.classification.classifier.LogisticRegressionClassifier;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import org.junit.Before;

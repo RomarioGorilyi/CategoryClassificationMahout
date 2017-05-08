@@ -1,6 +1,6 @@
-package com.genesys.knowledge.classification;
+package com.genesys.knowledge.classification.classifier;
 
-import com.genesys.knowledge.classification.classifier.LogisticRegressionClassifier;
+import com.genesys.knowledge.classification.util.CategoryHandler;
 import com.genesys.knowledge.classification.util.DocumentHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
@@ -8,7 +8,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by rhorilyi on 27.04.2017.
@@ -49,39 +51,33 @@ public class LrClassifierConstructedWithDocumentsTest {
         }
     }
 
-    private void test(List<Document> trainingDocuments, List<Document> testDocuments, int trainingLoopsNumber) {
-        int[] correct = new int[testDocuments.size() + 1];
+    private void test(List<Document> trainingDocuments, List<Document> testDocuments, int trainingLapsNumber) {
+        int[] numberOfCorrectClassifications = new int[testDocuments.size() + 1];
+
         for (int run = 0; run < 50; run++) {
             LogisticRegressionClassifier classifier = new LogisticRegressionClassifier(trainingDocuments);
             classifier.getCategoryHandler().clear();
 
             // train the model
-            for (int i = 0; i < trainingLoopsNumber; i++) {
+            for (int i = 0; i < trainingLapsNumber; i++) {
                 Collections.shuffle(trainingDocuments, new SecureRandom());
                 for (Document trainingDoc : trainingDocuments) {
                     classifier.train(trainingDoc);
                 }
             }
 
-            int successfulPredictionNumberPerLoop = testClassificationModel(classifier, testDocuments);
-            correct[successfulPredictionNumberPerLoop]++;
+            int numberOfCorrectClassificationsPerRun = testClassificationModel(classifier, testDocuments);
+            numberOfCorrectClassifications[numberOfCorrectClassificationsPerRun]++;
         }
 
-        // evaluate the model
-        for (int i = 0; i < Math.floor(0.95 * testDocuments.size()); i++) {
-            if (correct[i] != 0) {
-                System.out.println("correct[" + i + "]=" + correct[i]);
-            }
-        }
-        if (correct[testDocuments.size() - 1] != 0) {
-            System.out.println("100%% accuracy detected: " + correct[testDocuments.size() - 1] + " times");
-        }
+        evaluateClassificationModel(testDocuments, numberOfCorrectClassifications);
     }
 
     private int testClassificationModel(LogisticRegressionClassifier classifier, List<Document> documents) {
         // TODO improve evaluation to check all categories of documents
-        int successfulPredictionNumberPerLoop = 0;
-        com.genesys.knowledge.classification.util.CategoryHandler categoryHandler = classifier.getCategoryHandler();
+        int numberOfCorrectClassificationsPerRun = 0;
+
+        CategoryHandler categoryHandler = classifier.getCategoryHandler();
         for (Document document : documents) {
             for (Category category : document.getCategories()) {
                 categoryHandler.addCategory(category);
@@ -90,12 +86,24 @@ public class LrClassifierConstructedWithDocumentsTest {
             List<Category> categories = document.getCategories();
             for (Category category : categories) {
                 if (mostRelevantCategory.equals(category.getId())) {
-                    successfulPredictionNumberPerLoop++;
+                    numberOfCorrectClassificationsPerRun++;
                     break;
                 }
             }
         }
 
-        return successfulPredictionNumberPerLoop;
+        return numberOfCorrectClassificationsPerRun;
+    }
+
+    private void evaluateClassificationModel(List<Document> testDocuments, int[] numberOfCorrectClassifications) {
+        for (int i = 0; i < Math.floor(0.95 * testDocuments.size()); i++) {
+            if (numberOfCorrectClassifications[i] != 0) {
+                System.out.println("correct[" + i + "]=" + numberOfCorrectClassifications[i]);
+            }
+        }
+        if (numberOfCorrectClassifications[testDocuments.size() - 1] != 0) {
+            System.out.println("100%% accuracy detected: " + numberOfCorrectClassifications[testDocuments.size() - 1]
+                    + " times");
+        }
     }
 }

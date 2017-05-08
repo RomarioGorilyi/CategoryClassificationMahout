@@ -36,7 +36,7 @@ public class CategoryHandler {
      * Initializes {@code this} CategoriesHandler with categories retrieved from the specified document.
      */
     public void initHandler(Document document) {
-        ArrayList<Category> categories = document.getCategories();
+        List<Category> categories = document.getCategories();
         for (Category category : categories) {
             this.addCategory(category);
         }
