@@ -24,8 +24,8 @@ import java.util.*;
 @Slf4j
 public class DocumentHandler {
 
-    public static List<Document> retrieveDocuments() {
-        String url = "http://gks-dep-stbl:9092/gks-server/v2/knowledge/tenants/1/langs/en_US/documents?size=1000";
+    public static List<Document> retrieveDocuments(String url) {
+//        String url = "http://gks-dep-stbl:9092/gks-server/v2/knowledge/tenants/1/langs/en_US/documents?size=200";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -38,11 +38,12 @@ public class DocumentHandler {
         return responseMessage.getData().getDocuments();
     }
 
-    public static List<String> convertDocumentToTerms(Document document) {
+    // TODO mb should reside in the other class
+    public static List<String> convertTextToTerms(String text) {
         List<String> resultTerms = new ArrayList<>();
 
         StandardTokenizer standardTokenizer = new StandardTokenizer();
-        standardTokenizer.setReader(new BufferedReader(new StringReader(document.getText())));
+        standardTokenizer.setReader(new BufferedReader(new StringReader(text)));
 
         LowerCaseFilter lowerCaseFilter = new LowerCaseFilter(standardTokenizer);
 
@@ -85,7 +86,7 @@ public class DocumentHandler {
         int maxNumberOfTerms = 0;
 
         for (Document document : documents) {
-            List<String> terms = convertDocumentToTerms(document);
+            List<String> terms = convertTextToTerms(document.getText());
             int termsNumber = terms.size();
             if (termsNumber > maxNumberOfTerms) {
                 maxNumberOfTerms = termsNumber;
@@ -99,7 +100,7 @@ public class DocumentHandler {
         Set<String> uniqueCategories = new HashSet<>();
 
         for (Document document : documents) {
-            ArrayList<Category> categories = document.getCategories();
+            List<Category> categories = document.getCategories();
             for (Category category : categories) {
                 uniqueCategories.add(category.getId());
             }

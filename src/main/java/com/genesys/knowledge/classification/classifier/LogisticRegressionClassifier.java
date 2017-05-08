@@ -92,6 +92,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
                 trainOnlineLogisticRegression(document, category);
             }
         }
+
         return this;
     }
 
@@ -106,6 +107,37 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
             trainOnlineLogisticRegression(document, category);
         }
         return this;
+    }
+
+    /**
+     * Calculates probability that the specified {@link Document} has the specified {@link Category}.
+     * If {@code this} LogisticRegressionClassifier's {@link #categoryHandler} doesn't contain the category,
+     * return 0.
+     *
+     * @param document document to classify
+     * @param category category to check its presence probability in the specified document
+     * @return probability as {@code double} value
+     */
+    public double calculateCategoryProbability(Document document, Category category) {
+        double probability;
+        try {
+            probability = lr.classifyFull(getFeatureVector(document)).get(categoryHandler.getCategoryOrderNumber(category));
+        } catch (CategoryNotFoundException e) {
+            probability = 0;
+        }
+
+        return probability;
+    }
+
+    /**
+     * Classify the specified document calculating id of the most relevant {@link Category}.
+     *
+     * @param document document to classify
+     * @return {@code String} category id
+     */
+    public String calculateMostRelevantCategory(Document document) {
+        int index = lr.classifyFull(getFeatureVector(document)).maxValueIndex();
+        return categoryHandler.getCategoryId(index);
     }
 
     private boolean isDocumentValid(Document document) {
@@ -123,35 +155,6 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         lr.train(categoryOrderNumber, getFeatureVector(document));
     }
 
-    /**
-     * Calculates probability that the specified {@link Document} has the specified {@link Category}.
-     * If {@code this} LogisticRegressionClassifier's {@link #categoryHandler} doesn't contain the category,
-     * return 0.
-     *
-     * @param document document to classify
-     * @param category category to check its presence probability in the specified document
-     * @return probability as {@code double} value
-     */
-    public double calculateCategoryProbability(Document document, Category category) {
-        Vector vector = lr.classifyFull(getFeatureVector(document));
-        try {
-            return lr.classifyFull(getFeatureVector(document)).get(categoryHandler.getCategoryOrderNumber(category));
-        } catch (CategoryNotFoundException e) {
-            return 0;
-        }
-    }
-
-    /**
-     * Calculates id of the most relevant {@link Category} of the specified document which is classified.
-     *
-     * @param document document to classify
-     * @return {@code String} category id
-     */
-    public String calculateMostRelevantCategory(Document document) {
-        int index = lr.classifyFull(getFeatureVector(document)).maxValueIndex();
-        return categoryHandler.getCategoryId(index);
-    }
-
     private Vector getFeatureVector(Document document) {
         Vector outputVector = new RandomAccessSparseVector(lr.numFeatures());
 
@@ -159,7 +162,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         // Look at the regression graph on the link below to see why we need the intercept.
         // http://statistiksoftware.blogspot.nl/2013/01/why-we-need-intercept.html
 
-        List<String> terms = DocumentHandler.convertDocumentToTerms(document);
+        List<String> terms = document.getTerms();
         for (String term : terms) {
             featureEncoder.addToVector(term, 1, outputVector);
         }
