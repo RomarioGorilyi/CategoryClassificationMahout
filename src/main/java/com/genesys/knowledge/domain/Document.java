@@ -17,9 +17,12 @@ import java.util.List;
 @Slf4j
 public class Document {
 
-    @JsonProperty(value = "body")
+    @Getter @Setter
+    private String kbId;
+    @JsonProperty(value = "answer")
     @Getter @Setter
     private String text;
+    @JsonProperty(value = "relatedCategories")
     @Getter @Setter
     private List<Category> categories;
     @Getter @Setter
@@ -33,7 +36,11 @@ public class Document {
 
     public Document(String text) {
         this.text = text;
-        terms = DocumentHandler.convertTextToTerms(text);
+        if (text != null) {
+            terms = DocumentHandler.convertTextToTerms(text);
+        } else {
+            terms = new ArrayList<>();
+        }
     }
 
     public void addCategory(Category category) {
