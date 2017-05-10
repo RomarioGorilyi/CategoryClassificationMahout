@@ -10,6 +10,8 @@ import org.apache.lucene.analysis.StopFilter;
 import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.KeywordAttribute;
+import org.apache.lucene.analysis.tokenattributes.KeywordAttributeImpl;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -24,17 +26,18 @@ import java.util.*;
 @Slf4j
 public class DocumentHandler {
 
-    public static List<Document> retrieveDocuments(String url) {
+    public static List<Document> retrieveDocuments(String url, String knowledgeBase) {
 //        String url = "http://gks-dep-stbl:9092/gks-server/v2/knowledge/tenants/1/langs/en_US/documents?size=200";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> request = new HttpEntity<>(headers);
+
+        String requestBody = "{\"knowledgebases\" : [ \"" + knowledgeBase + "\" ]}";
+        HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
 
         RestTemplate restTemplate = new RestTemplate();
 
         ResponseMessage responseMessage = restTemplate.postForObject(url, request, ResponseMessage.class);
-
         return responseMessage.getData().getDocuments();
     }
 
@@ -86,10 +89,12 @@ public class DocumentHandler {
         int maxNumberOfTerms = 0;
 
         for (Document document : documents) {
-            List<String> terms = convertTextToTerms(document.getText());
-            int termsNumber = terms.size();
-            if (termsNumber > maxNumberOfTerms) {
-                maxNumberOfTerms = termsNumber;
+            if (document.getText() != null) {
+                List<String> terms = convertTextToTerms(document.getText());
+                int termsNumber = terms.size();
+                if (termsNumber > maxNumberOfTerms) {
+                    maxNumberOfTerms = termsNumber;
+                }
             }
         }
 

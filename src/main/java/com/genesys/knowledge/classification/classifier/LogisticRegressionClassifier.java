@@ -29,6 +29,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
 
     @Getter
     private CategoryHandler categoryHandler;
+    @Getter
     private OnlineLogisticRegression lr;
 
     private final ConstantValueEncoder interceptEncoder = new ConstantValueEncoder("intercept");
@@ -130,18 +131,18 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
     }
 
     /**
-     * Classify the specified document calculating id of the most relevant {@link Category}.
+     * Classify the specified document calculating id of its most suitable {@link Category}.
      *
      * @param document document to classify
      * @return {@code String} category id
      */
-    public String calculateMostRelevantCategory(Document document) {
+    public String calculateMostSuitableCategory(Document document) {
         int index = lr.classifyFull(getFeatureVector(document)).maxValueIndex();
         return categoryHandler.getCategoryId(index);
     }
 
     private boolean isDocumentValid(Document document) {
-        return !(document == null || document.getText().isEmpty());
+        return !(document == null || document.getText() == null || document.getText().isEmpty());
     }
 
     private void trainOnlineLogisticRegression(Document document, Category category) {
