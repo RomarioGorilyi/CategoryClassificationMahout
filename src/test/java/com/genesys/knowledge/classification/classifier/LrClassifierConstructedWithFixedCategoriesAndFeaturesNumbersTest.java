@@ -31,12 +31,12 @@ public class LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest {
         trainClassifier(document2, category2);
 
         String expectedAlreadyTrainedDocumentCategory = category1.getId();
-        String actualAlreadyTrainedDocumentCategory = classifier.calculateMostRelevantCategory(document1);
+        String actualAlreadyTrainedDocumentCategory = classifier.calculateMostSuitableCategory(document1);
         assertEquals(expectedAlreadyTrainedDocumentCategory, actualAlreadyTrainedDocumentCategory);
 
         Document testDocument = new Document("Teaching machines is our hobby");
         String expectedTestDocumentCategory = category1.getId();
-        String actualTestDocumentCategory = classifier.calculateMostRelevantCategory(testDocument);
+        String actualTestDocumentCategory = classifier.calculateMostSuitableCategory(testDocument);
         assertEquals(expectedTestDocumentCategory, actualTestDocumentCategory);
     }
 
@@ -48,7 +48,7 @@ public class LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest {
 
         Document testDocument = new Document("Teaching machines is our hobby");
         String expectedTestDocumentCategory = category.getId();
-        String actualTestDocumentCategory = classifier.calculateMostRelevantCategory(testDocument);
+        String actualTestDocumentCategory = classifier.calculateMostSuitableCategory(testDocument);
         assertEquals(expectedTestDocumentCategory, actualTestDocumentCategory);
     }
 
