@@ -10,6 +10,7 @@ import com.genesys.knowledge.domain.Document;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.mahout.classifier.sgd.L1;
+import org.apache.mahout.classifier.sgd.L2;
 import org.apache.mahout.classifier.sgd.OnlineLogisticRegression;
 import org.apache.mahout.classifier.sgd.PolymorphicWritable;
 import org.apache.mahout.math.RandomAccessSparseVector;
@@ -19,7 +20,7 @@ import org.apache.mahout.vectorizer.encoders.FeatureVectorEncoder;
 import org.apache.mahout.vectorizer.encoders.StaticWordValueEncoder;
 
 import java.io.*;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by rhorilyi on 25.04.2017.
@@ -41,7 +42,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         lr = new OnlineLogisticRegression(
                 ClassifierDefaults.DEFAULT_NUM_CATEGORIES,
                 ClassifierDefaults.DEFAULT_NUM_FEATURES,
-                new L1())
+                new L2())
                 .learningRate(LogisticRegressionDefaults.DEFAULT_LR_LEARNING_RATE)
                 .alpha(LogisticRegressionDefaults.DEFAULT_LR_ALPHA)
                 .lambda(LogisticRegressionDefaults.DEFAULT_LR_LAMBDA)
@@ -52,7 +53,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
     public LogisticRegressionClassifier(int categoriesNumber, int featuresNumber) {
         categoryHandler = new CategoryHandler();
 
-        lr = new OnlineLogisticRegression(categoriesNumber, featuresNumber, new L1())
+        lr = new OnlineLogisticRegression(categoriesNumber, featuresNumber, new L2())
                 .learningRate(LogisticRegressionDefaults.DEFAULT_LR_LEARNING_RATE)
                 .alpha(LogisticRegressionDefaults.DEFAULT_LR_ALPHA)
                 .lambda(LogisticRegressionDefaults.DEFAULT_LR_LAMBDA)
@@ -65,9 +66,9 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         categoryHandler.initHandler(documents);
 
         lr = new OnlineLogisticRegression(
-                categoryHandler.getCategoriesQuantity(), // TODO or DocumentHandler.findUniqueCategoriesNumber()
+                categoryHandler.getCategoriesQuantity(),
                 DocumentHandler.findMaxNumberOfTerms(documents),
-                new L1())
+                new L2())
                 .learningRate(LogisticRegressionDefaults.DEFAULT_LR_LEARNING_RATE)
                 .alpha(LogisticRegressionDefaults.DEFAULT_LR_ALPHA)
                 .lambda(LogisticRegressionDefaults.DEFAULT_LR_LAMBDA)
@@ -108,6 +109,10 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
             trainOnlineLogisticRegression(document, category);
         }
         return this;
+    }
+
+    public Vector classifyDocument(Document document) {
+        return lr.classifyFull(getFeatureVector(document));
     }
 
     /**
@@ -165,11 +170,52 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
 
         List<String> terms = document.getTerms();
         for (String term : terms) {
-            featureEncoder.addToVector(term, 1, outputVector);
+            featureEncoder.addToVector(term, 2, outputVector);
         }
 
         return outputVector;
     }
+
+//    private double calcWeight(String term, List<String> terms) {
+//        double termFreq = 0;
+//        for (String t : terms) {
+//            if (term.equals(t)) {
+//                termFreq++;
+//            }
+//        }
+//
+//        return 0.5 + 0.5 * (termFreq / calcMaxTermFreq(terms));
+////        return 2;
+//    }
+//
+//    private int calcMaxTermFreq(List<String> terms) {
+//        int maxTermFreq = 0;
+//
+//        Map<String, Integer> frequencies = new HashMap<>();
+//        for (String term : terms) {
+//            frequencies.put(term, frequencies.getOrDefault(term, 0) + 1);
+//        }
+//        Collection<Integer> freqValues = frequencies.values();
+//        for (int freq : freqValues) {
+//            if (freq > maxTermFreq) {
+//                maxTermFreq = freq;
+//            }
+//        }
+//
+//        return maxTermFreq;
+//    }
+//
+//    private int calcTermFreq(String term) {
+//        int termFreq = 0;
+//
+//        for (Document doc : documents) {
+//            if (doc.getTerms().contains(term)) {
+//                termFreq++;
+//            }
+//        }
+//
+//        return termFreq;
+//    }
 
     @Override
     public byte[] serializeModel() {
