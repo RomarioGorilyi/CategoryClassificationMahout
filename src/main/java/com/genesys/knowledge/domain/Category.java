@@ -9,6 +9,7 @@ import lombok.*;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 public class Category {
 
     @Getter @Setter
