@@ -1,17 +1,18 @@
 package com.genesys.knowledge.classification.util;
 
+import com.genesys.elasticsearch.index.analysis.tokenizers.FreeLingTokenizer;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import com.genesys.knowledge.domain.ResponseMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.analysis.CharArraySet;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.StopFilter;
+import org.apache.lucene.analysis.*;
+import org.apache.lucene.analysis.core.LowerCaseFilter;
+import org.apache.lucene.analysis.core.StopFilter;
+import org.apache.lucene.analysis.icu.ICUFoldingFilter;
 import org.apache.lucene.analysis.snowball.SnowballFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.analysis.tokenattributes.KeywordAttribute;
-import org.apache.lucene.analysis.tokenattributes.KeywordAttributeImpl;
+import org.apache.lucene.analysis.tokenattributes.*;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -27,8 +28,6 @@ import java.util.*;
 public class DocumentHandler {
 
     public static List<Document> retrieveDocuments(String url, String knowledgeBase) {
-//        String url = "http://gks-dep-stbl:9092/gks-server/v2/knowledge/tenants/1/langs/en_US/documents?size=200";
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -41,14 +40,19 @@ public class DocumentHandler {
         return responseMessage.getData().getDocuments();
     }
 
-    // TODO mb should reside in the other class
-    public static List<String> convertTextToTerms(String text) {
-        List<String> resultTerms = new ArrayList<>();
+    public static List<String> convertTextToTokens(String text, TokenizerOption tokenizerOption) {
+        List<String> resultTokens = new ArrayList<>();
 
-        StandardTokenizer standardTokenizer = new StandardTokenizer();
-        standardTokenizer.setReader(new BufferedReader(new StringReader(text)));
+        TokenStream tokenStream;
+        if ((tokenizerOption == null) || (tokenizerOption == TokenizerOption.FreeLingTokenizer)) {
+            tokenStream = new FreeLingTokenizer(new StringReader(text),
+                    "C:/freeling4-win64/data/",
+                    "en", null, null, false);
+        } else {
+            tokenStream = new StandardTokenizer(new BufferedReader(new StringReader(text)));
+        }
 
-        LowerCaseFilter lowerCaseFilter = new LowerCaseFilter(standardTokenizer);
+        tokenStream = new LowerCaseFilter(tokenStream);
 
         ArrayList<String> stopWordsList = new ArrayList<>();
         try (Scanner scanner = new Scanner(new File("src/main/resources/rules/knowledge/stopwords.txt"))) {
@@ -59,46 +63,47 @@ public class DocumentHandler {
             e.printStackTrace();
         }
         CharArraySet stopWordsSet = new CharArraySet(stopWordsList, true);
-        StopFilter stopFilter = new StopFilter(lowerCaseFilter, stopWordsSet);
+        tokenStream = new StopFilter(tokenStream, stopWordsSet);
 
-//        KeywordAttribute attribute = new KeywordAttributeImpl();
-//        attribute.setKeyword(true);
-//        stopFilter.addAttribute(KeywordAttribute.class);
+        tokenStream = new ICUFoldingFilter(tokenStream);
 
-        SnowballFilter stemmer = new SnowballFilter(stopFilter, "English");
+        if (tokenizerOption == TokenizerOption.StandardTokenizer) {
+            tokenStream = new SnowballFilter(tokenStream, "English"); // stemming
+        }
+
         try {
-            stemmer.reset();
-            while (stemmer.incrementToken()) {
-                resultTerms.add(stemmer.getAttribute(CharTermAttribute.class).toString());
+            tokenStream.reset();
+            while (tokenStream.incrementToken()) {
+                resultTokens.add(tokenStream.getAttribute(CharTermAttribute.class).toString());
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
-                stemmer.end();
-                stemmer.close();
+                tokenStream.end();
+                tokenStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        return resultTerms;
+        return resultTokens;
     }
 
-    public static int findMaxNumberOfTerms(List<Document> documents) {
-        int maxNumberOfTerms = 0;
+    public static int findMaxNumberOfTokens(List<Document> documents) {
+        int maxNumberOfTokens = 0;
 
         for (Document document : documents) {
             if (document.getText() != null) {
-                List<String> terms = convertTextToTerms(document.getText());
-                int termsNumber = terms.size();
-                if (termsNumber > maxNumberOfTerms) {
-                    maxNumberOfTerms = termsNumber;
+                List<String> tokens = convertTextToTokens(document.getText(), null);
+                int tokensNumber = tokens.size();
+                if (tokensNumber > maxNumberOfTokens) {
+                    maxNumberOfTokens = tokensNumber;
                 }
             }
         }
 
-        return maxNumberOfTerms;
+        return maxNumberOfTokens;
     }
 
     public static int findUniqueCategoriesNumber(List<Document> documents) {
@@ -112,5 +117,10 @@ public class DocumentHandler {
         }
 
         return uniqueCategories.size();
+    }
+
+    public enum TokenizerOption {
+        StandardTokenizer,
+        FreeLingTokenizer
     }
 }
