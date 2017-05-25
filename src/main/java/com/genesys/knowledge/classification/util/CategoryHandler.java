@@ -77,7 +77,7 @@ public class CategoryHandler {
      * @param categoryOrderNumber order number of the {@link Category} in {@code this} CategoriesHandler
      * @return {@code String} id of the category
      */
-    public String getCategoryId(int categoryOrderNumber) {
+    public Category getCategory(int categoryOrderNumber) {
         String categoryId = null;
 
         Set<Map.Entry<String, Integer>> entrySet = categoryOrderNumbers.entrySet();
@@ -88,7 +88,7 @@ public class CategoryHandler {
             }
         }
 
-        return categoryId;
+        return new Category(categoryId);
     }
 
     public static void serializeCategoryOrderNumbers() {
@@ -113,6 +113,7 @@ public class CategoryHandler {
         }
     }
 
+    // TODO make static
     /**
      * Clears handler replacing all categories with a new empty container.
      */

@@ -9,7 +9,6 @@ import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.mahout.classifier.sgd.L1;
 import org.apache.mahout.classifier.sgd.L2;
 import org.apache.mahout.classifier.sgd.OnlineLogisticRegression;
 import org.apache.mahout.classifier.sgd.PolymorphicWritable;
@@ -67,7 +66,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
 
         lr = new OnlineLogisticRegression(
                 categoryHandler.getCategoriesQuantity(),
-                DocumentHandler.findMaxNumberOfTerms(documents),
+                DocumentHandler.findMaxNumberOfTokens(documents),
                 new L2())
                 .learningRate(LogisticRegressionDefaults.DEFAULT_LR_LEARNING_RATE)
                 .alpha(LogisticRegressionDefaults.DEFAULT_LR_ALPHA)
@@ -124,7 +123,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
      * @param category category to check its presence probability in the specified document
      * @return probability as {@code double} value
      */
-    public double calculateCategoryProbability(Document document, Category category) {
+    public double calcCategoryProbability(Document document, Category category) {
         double probability;
         try {
             probability = lr.classifyFull(getFeatureVector(document)).get(categoryHandler.getCategoryOrderNumber(category));
@@ -141,9 +140,9 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
      * @param document document to classify
      * @return {@code String} category id
      */
-    public String calculateMostSuitableCategory(Document document) {
+    public String calcMostSuitableCategory(Document document) {
         int index = lr.classifyFull(getFeatureVector(document)).maxValueIndex();
-        return categoryHandler.getCategoryId(index);
+        return categoryHandler.getCategory(index).getId();
     }
 
     private boolean isDocumentValid(Document document) {
@@ -168,7 +167,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         // Look at the regression graph on the link below to see why we need the intercept.
         // http://statistiksoftware.blogspot.nl/2013/01/why-we-need-intercept.html
 
-        List<String> terms = document.getTerms();
+        List<String> terms = document.getTokens();
         for (String term : terms) {
             featureEncoder.addToVector(term, 2, outputVector);
         }
@@ -176,23 +175,23 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         return outputVector;
     }
 
-//    private double calcWeight(String term, List<String> terms) {
+//    private double calcWeight(String term, List<String> tokens) {
 //        double termFreq = 0;
-//        for (String t : terms) {
+//        for (String t : tokens) {
 //            if (term.equals(t)) {
 //                termFreq++;
 //            }
 //        }
 //
-//        return 0.5 + 0.5 * (termFreq / calcMaxTermFreq(terms));
+//        return 0.5 + 0.5 * (termFreq / calcMaxTermFreq(tokens));
 ////        return 2;
 //    }
 //
-//    private int calcMaxTermFreq(List<String> terms) {
+//    private int calcMaxTermFreq(List<String> tokens) {
 //        int maxTermFreq = 0;
 //
 //        Map<String, Integer> frequencies = new HashMap<>();
-//        for (String term : terms) {
+//        for (String term : tokens) {
 //            frequencies.put(term, frequencies.getOrDefault(term, 0) + 1);
 //        }
 //        Collection<Integer> freqValues = frequencies.values();
@@ -209,7 +208,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
 //        int termFreq = 0;
 //
 //        for (Document doc : documents) {
-//            if (doc.getTerms().contains(term)) {
+//            if (doc.getTokens().contains(term)) {
 //                termFreq++;
 //            }
 //        }
