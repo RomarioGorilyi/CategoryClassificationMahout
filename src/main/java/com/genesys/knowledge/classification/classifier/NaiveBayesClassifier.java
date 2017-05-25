@@ -13,17 +13,17 @@ import org.apache.mahout.classifier.naivebayes.AbstractNaiveBayesClassifier;
 import org.apache.mahout.classifier.naivebayes.NaiveBayesModel;
 import org.apache.mahout.classifier.naivebayes.StandardNaiveBayesClassifier;
 import org.apache.mahout.classifier.naivebayes.training.TrainNaiveBayesJob;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.vectorizer.SparseVectorsFromSequenceFiles;
+import org.apache.mahout.math.VectorWritable;
 import org.apache.mahout.vectorizer.encoders.ConstantValueEncoder;
 import org.apache.mahout.vectorizer.encoders.FeatureVectorEncoder;
 import org.apache.mahout.vectorizer.encoders.StaticWordValueEncoder;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Created by rhorilyi on 15.05.2017.
@@ -31,13 +31,16 @@ import java.util.List;
 public class NaiveBayesClassifier extends AbstractClassifier {
 
     String sequenceFilePath = "input/tweets-seq";
-    String labelIndexPath = "input/labelindex";
+    String tempDir = "input/tmp";
     String modelPath = "input/model";
-    String vectorsPath = "input/tweets-vectors";
+    String inputDataPath = "input/tweets-vectors";
 
     @Getter
     private CategoryHandler categoryHandler;
     private List<Document> documents;
+
+    @Getter
+    private NaiveBayesModel model;
     @Getter
     private AbstractNaiveBayesClassifier classifier;
 
@@ -45,6 +48,8 @@ public class NaiveBayesClassifier extends AbstractClassifier {
 
     private final ConstantValueEncoder interceptEncoder = new ConstantValueEncoder("intercept");
     private final FeatureVectorEncoder featureEncoder = new StaticWordValueEncoder("feature");
+
+    private static final Pattern SLASH = Pattern.compile("/");
 
     public NaiveBayesClassifier(List<Document> documents) {
         this.documents = documents;
@@ -54,24 +59,46 @@ public class NaiveBayesClassifier extends AbstractClassifier {
         configuration.set("mapred.job.tracker", "ua-rhorilyi-lt:8020");
         System.setProperty("hadoop.home.dir", "C:\\hdp\\hadoop-2.4.0.2.1.7.0-2162");
 
+        prepareModel();
+        model.validate();
+        classifier = new StandardNaiveBayesClassifier(model);
+    }
+
+    private void prepareModel() {
+        writeDataToFile();
+        trainModel();
         try {
-            NaiveBayesModel model = NaiveBayesModel.materialize(new Path(modelPath), configuration);
-            classifier = new StandardNaiveBayesClassifier(model);
+            model = NaiveBayesModel.materialize(new Path(modelPath, "part-r-00000"), configuration);
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void writeDataToFile() {
+        try (SequenceFile.Writer writer = new SequenceFile.Writer(
+                FileSystem.get(configuration), configuration, new Path(inputDataPath), Text.class, VectorWritable.class)) {
+            for (Document document : documents) {
+                for (Category category : document.getCategories()) {
+                    writer.append(new Text(category.getId()), new Text(document.getText()));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void trainModel() {
+        TrainNaiveBayesJob trainNaiveBayes = new TrainNaiveBayesJob();
+        trainNaiveBayes.setConf(configuration);
+        try {
+            trainNaiveBayes.run(new String[] {"-i", inputDataPath + "-o", modelPath, "--tempDir", tempDir});
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     @Override
     public AbstractClassifier train(Document queryTerms) {
-        TrainNaiveBayesJob trainNaiveBayes = new TrainNaiveBayesJob();
-        trainNaiveBayes.setConf(configuration);
-        try {
-            trainNaiveBayes.run(new String[] {"-i", vectorsPath + "/tfidf-vectors", "-o", modelPath, "-li",
-                    labelIndexPath, "-el", "-c", "-ow"});
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         return this;
     }
 
@@ -83,31 +110,15 @@ public class NaiveBayesClassifier extends AbstractClassifier {
      */
     public String calculateMostSuitableCategory(Document document) {
         int index = classifier.classifyFull(getFeatureVector(document)).maxValueIndex();
-        return categoryHandler.getCategoryId(index);
+        return categoryHandler.getCategory(index).getId();
     }
 
-    private void inputDataToSequenceFile() throws Exception {
-        FileSystem fs = FileSystem.getLocal(configuration);
-        Path seqFilePath = new Path(sequenceFilePath);
-        fs.delete(seqFilePath, false);
-        int count = 0;
-        try (SequenceFile.Writer writer = SequenceFile.createWriter(
-                fs, configuration, seqFilePath, Text.class, Text.class)) {
-            String line;
-            for (Document document : documents) {
-                List<Category> categories = document.getCategories();
-                for (Category category : categories) {
-                    writer.append(new Text("/" + category.getId() + "/text" + count++),
-                            new Text(document.getText()));
-                }
-            }
+    private static VectorWritable trainingInstance(Vector.Element... elems) {
+        DenseVector trainingInstance = new DenseVector(6);
+        for (Vector.Element elem : elems) {
+            trainingInstance.set(elem.index(), elem.get());
         }
-    }
-
-    private void sequenceFileToSparseVector() throws Exception {
-        SparseVectorsFromSequenceFiles svfsf = new SparseVectorsFromSequenceFiles();
-        svfsf.run(new String[] { "-i", sequenceFilePath, "-o", vectorsPath,
-                "-ow" });
+        return new VectorWritable(trainingInstance);
     }
 
     private Vector getFeatureVector(Document document) {
@@ -117,7 +128,7 @@ public class NaiveBayesClassifier extends AbstractClassifier {
         // Look at the regression graph on the link below to see why we need the intercept.
         // http://statistiksoftware.blogspot.nl/2013/01/why-we-need-intercept.html
 
-        List<String> terms = document.getTerms();
+        List<String> terms = document.getTokens();
         for (String term : terms) {
             featureEncoder.addToVector(term, 2, outputVector);
         }
