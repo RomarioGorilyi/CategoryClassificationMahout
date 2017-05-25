@@ -26,20 +26,20 @@ public class Document {
     @Getter @Setter
     private List<Category> categories;
     @Getter @Setter
-    private List<String> terms;
+    private List<String> tokens;
 
     public Document() {
         categories = new ArrayList<>();
         text = "";
-        terms = new ArrayList<>();
+        tokens = new ArrayList<>();
     }
 
     public Document(String text) {
         this.text = text;
         if (text != null) {
-            terms = DocumentHandler.convertTextToTerms(text);
+            tokens = DocumentHandler.convertTextToTokens(text, null);
         } else {
-            terms = new ArrayList<>();
+            tokens = new ArrayList<>();
         }
     }
 

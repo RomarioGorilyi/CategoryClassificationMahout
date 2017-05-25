@@ -31,12 +31,12 @@ public class LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest {
         trainClassifier(document2, category2);
 
         String expectedAlreadyTrainedDocumentCategory = category1.getId();
-        String actualAlreadyTrainedDocumentCategory = classifier.calculateMostSuitableCategory(document1);
+        String actualAlreadyTrainedDocumentCategory = classifier.calcMostSuitableCategory(document1);
         assertEquals(expectedAlreadyTrainedDocumentCategory, actualAlreadyTrainedDocumentCategory);
 
         Document testDocument = new Document("Teaching machines is our hobby");
         String expectedTestDocumentCategory = category1.getId();
-        String actualTestDocumentCategory = classifier.calculateMostSuitableCategory(testDocument);
+        String actualTestDocumentCategory = classifier.calcMostSuitableCategory(testDocument);
         assertEquals(expectedTestDocumentCategory, actualTestDocumentCategory);
     }
 
@@ -48,7 +48,7 @@ public class LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest {
 
         Document testDocument = new Document("Teaching machines is our hobby");
         String expectedTestDocumentCategory = category.getId();
-        String actualTestDocumentCategory = classifier.calculateMostSuitableCategory(testDocument);
+        String actualTestDocumentCategory = classifier.calcMostSuitableCategory(testDocument);
         assertEquals(expectedTestDocumentCategory, actualTestDocumentCategory);
     }
 
@@ -59,7 +59,7 @@ public class LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest {
         trainClassifier(document, category);
 
         Category unknownCategory = new Category("unknownCategory");
-        double actualProbability = classifier.calculateCategoryProbability(document, unknownCategory);
+        double actualProbability = classifier.calcCategoryProbability(document, unknownCategory);
         double expectedProbability = 0;
         assertEquals(expectedProbability, actualProbability, 0);
     }
