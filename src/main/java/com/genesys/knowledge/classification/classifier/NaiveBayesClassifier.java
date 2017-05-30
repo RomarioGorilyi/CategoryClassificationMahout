@@ -1,6 +1,7 @@
 package com.genesys.knowledge.classification.classifier;
 
 import com.genesys.knowledge.classification.util.CategoryHandler;
+import com.genesys.knowledge.classification.util.DocumentHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import lombok.Getter;
@@ -22,6 +23,7 @@ import org.apache.mahout.vectorizer.encoders.FeatureVectorEncoder;
 import org.apache.mahout.vectorizer.encoders.StaticWordValueEncoder;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -37,7 +39,6 @@ public class NaiveBayesClassifier extends AbstractClassifier {
 
     @Getter
     private CategoryHandler categoryHandler;
-    private List<Document> documents;
 
     @Getter
     private NaiveBayesModel model;
@@ -52,20 +53,19 @@ public class NaiveBayesClassifier extends AbstractClassifier {
     private static final Pattern SLASH = Pattern.compile("/");
 
     public NaiveBayesClassifier(List<Document> documents) {
-        this.documents = documents;
         categoryHandler = new CategoryHandler();
         categoryHandler.initHandler(documents);
 
         configuration.set("mapred.job.tracker", "ua-rhorilyi-lt:8020");
         System.setProperty("hadoop.home.dir", "C:\\hdp\\hadoop-2.4.0.2.1.7.0-2162");
 
-        prepareModel();
+        prepareModel(documents);
         model.validate();
         classifier = new StandardNaiveBayesClassifier(model);
     }
 
-    private void prepareModel() {
-        writeDataToFile();
+    private void prepareModel(List<Document> documents) {
+        writeDataToFile(documents);
         trainModel();
         try {
             model = NaiveBayesModel.materialize(new Path(modelPath, "part-r-00000"), configuration);
@@ -74,7 +74,7 @@ public class NaiveBayesClassifier extends AbstractClassifier {
         }
     }
 
-    private void writeDataToFile() {
+    private void writeDataToFile(List<Document> documents) {
         try (SequenceFile.Writer writer = new SequenceFile.Writer(
                 FileSystem.get(configuration), configuration, new Path(inputDataPath), Text.class, VectorWritable.class)) {
             for (Document document : documents) {
@@ -97,20 +97,18 @@ public class NaiveBayesClassifier extends AbstractClassifier {
         }
     }
 
-    @Override
-    public AbstractClassifier train(Document queryTerms) {
-        return this;
-    }
+    public Vector getFeatureVector(List<String> tokens, Collection<List<String>> documentTokens) {
+        Vector outputVector = new RandomAccessSparseVector(10000);
 
-    /**
-     * Classify the specified document calculating id of its most suitable {@link Category}.
-     *
-     * @param document document to classify
-     * @return {@code String} category id
-     */
-    public String calculateMostSuitableCategory(Document document) {
-        int index = classifier.classifyFull(getFeatureVector(document)).maxValueIndex();
-        return categoryHandler.getCategory(index).getId();
+        interceptEncoder.addToVector("1", outputVector); // output[0] is the intercept term
+        // Look at the regression graph on the link below to see why we need the intercept.
+        // http://statistiksoftware.blogspot.nl/2013/01/why-we-need-intercept.html
+
+        for (String token : tokens) {
+            featureEncoder.addToVector(token, 2, outputVector);
+        }
+
+        return outputVector;
     }
 
     private static VectorWritable trainingInstance(Vector.Element... elems) {
@@ -119,21 +117,6 @@ public class NaiveBayesClassifier extends AbstractClassifier {
             trainingInstance.set(elem.index(), elem.get());
         }
         return new VectorWritable(trainingInstance);
-    }
-
-    private Vector getFeatureVector(Document document) {
-        Vector outputVector = new RandomAccessSparseVector(10000);
-
-        interceptEncoder.addToVector("1", outputVector); // output[0] is the intercept term
-        // Look at the regression graph on the link below to see why we need the intercept.
-        // http://statistiksoftware.blogspot.nl/2013/01/why-we-need-intercept.html
-
-        List<String> terms = document.getTokens();
-        for (String term : terms) {
-            featureEncoder.addToVector(term, 2, outputVector);
-        }
-
-        return outputVector;
     }
 
     @Override
