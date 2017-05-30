@@ -25,25 +25,33 @@ public class Document {
     @JsonProperty(value = "relatedCategories")
     @Getter @Setter
     private List<Category> categories;
-    @Getter @Setter
-    private List<String> tokens;
 
     public Document() {
-        categories = new ArrayList<>();
         text = "";
-        tokens = new ArrayList<>();
+        categories = new ArrayList<>();
     }
 
     public Document(String text) {
         this.text = text;
-        if (text != null) {
-            tokens = DocumentHandler.convertTextToTokens(text, null);
-        } else {
-            tokens = new ArrayList<>();
-        }
+        categories = new ArrayList<>();
     }
 
     public void addCategory(Category category) {
         categories.add(category);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Document)) return false;
+
+        Document document = (Document) o;
+
+        return text != null ? text.equals(document.text) : document.text == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return text != null ? text.hashCode() : 0;
     }
 }
