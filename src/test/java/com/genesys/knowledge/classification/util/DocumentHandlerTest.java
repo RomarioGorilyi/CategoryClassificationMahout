@@ -12,6 +12,8 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by rhorilyi on 04.05.2017.
@@ -28,10 +30,17 @@ public class DocumentHandlerTest {
         assertThat(documents, is(not(empty())));
     }
 
-    @Test
-    public void testFindMaxNumberOfTerms() {
-        System.out.println("Max number of terms: " + findMaxNumberOfTerms(DocumentHandler.retrieveDocuments(url, knowledgeBase)));
-    }
+//    @Test
+//    public void testFindMaxNumberOfTokens() {
+//        Document mockDoc1 = mock(Document.class);
+//        when(mockDoc1.getTokens().size()).thenReturn(3);
+//        Document mockDoc2 = mock(Document.class);
+//        when(mockDoc2.getTokens().size()).thenReturn(1);
+//        Document mockDoc3 = mock(Document.class);
+//        when(mockDoc3.getTokens().size()).thenReturn(99);
+//
+//        System.out.println("Max number of tokens: " + findMaxNumberOfTokens(DocumentHandler.retrieveDocuments(url, knowledgeBase)));
+//    }
 
     @Test
     public void testFindUniqueCategoriesNumber() {
@@ -39,35 +48,42 @@ public class DocumentHandlerTest {
     }
 
     @Test
-    public void testConvertDocumentToTerms() {
-        String text = "My test text, which is a good enough text sample, is running out...";
-        List<String> actualTerms = convertTextToTerms(text);
+    public void testConvertDocumentToTokensUsingFreeLingTokenizer() {
+        String text = "My test text, which is a good enough text sample, is running out";
+        List<String> actualTokens = convertTextToTokens(text, TokenizerOption.FreeLingTokenizer);
 
-        List<String> expectedTerms = Arrays.asList("test", "text", "good", "enough", "text", "sampl", "run");
-        assertThat(actualTerms, is(expectedTerms));
+        List<String> expectedTokens = Arrays.asList("test", "text", "good", "text", "sample", "run");
+        assertThat(actualTokens, is(expectedTokens));
     }
 
     @Test
-    public void testConvertEmptyDocumentToTerms() {
-        List<String> actualTerms = convertTextToTerms("");
+    public void testConvertDocumentToTokensUsingDefaultTokenizer() {
+        String text = "My test text, which is a good enough text sample, is running out";
+        List<String> actualTokens = convertTextToTokens(text, null);
 
-        List<String> expectedTerms = Collections.emptyList();
-        assertThat(actualTerms, is(expectedTerms));
+        List<String> expectedTokens = Arrays.asList("test", "text", "good", "text", "sample", "run");
+        assertThat(actualTokens, is(expectedTokens));
+    }
+
+    @Test
+    public void testConvertDocumentToTokensUsingStandardTokenizer() {
+        String text = "My test text, which is a good enough text sample, is running out";
+        List<String> actualTokens = convertTextToTokens(text, TokenizerOption.StandardTokenizer);
+
+        List<String> expectedTokens = Arrays.asList("test", "text", "good", "enough", "text", "sampl", "run");
+        assertThat(actualTokens, is(expectedTokens));
+    }
+
+    @Test
+    public void testConvertEmptyDocumentToTokens() {
+        List<String> actualTokens = convertTextToTokens("", null);
+
+        List<String> expectedTokens = Collections.emptyList();
+        assertThat(actualTokens, is(expectedTokens));
     }
 
     @Test(expected = NullPointerException.class)
-    public void testConvertNullDocumentToTerms() {
-        convertTextToTerms(null);
+    public void testConvertNullDocumentToTokens() {
+        convertTextToTokens(null, null);
     }
-
-//    private List<Document> retrieveDocuments() {
-//        List<Document> documents = new ArrayList<>(1000);
-//
-//        for (int i = 0; i < 3; i++) {
-//            String url = String.format(this.url, 200, i * 200);
-//            documents.addAll(DocumentHandler.retrieveDocuments(url));
-//        }
-//
-//        return documents;
-//    }
 }

@@ -40,6 +40,7 @@ public class DocumentHandler {
         return responseMessage.getData().getDocuments();
     }
 
+    // TODO talk out exception handling: mb this method should throw them
     public static List<String> convertTextToTokens(String text, TokenizerOption tokenizerOption) {
         List<String> resultTokens = new ArrayList<>();
 
