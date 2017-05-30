@@ -1,6 +1,6 @@
 package com.genesys.knowledge;
 
-import com.genesys.knowledge.classification.classifier.LrClassifierConstructedWithDocumentsTest;
+import com.genesys.knowledge.classification.classifier.ClassifierConstructedWithDocumentsTest;
 import com.genesys.knowledge.classification.classifier.LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest;
 import com.genesys.knowledge.classification.util.CategoryHandlerTest;
 import com.genesys.knowledge.classification.util.DocumentHandlerTest;
@@ -15,7 +15,7 @@ import org.junit.runners.Suite;
         CategoryHandlerTest.class,
         DocumentHandlerTest.class,
         LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest.class,
-        LrClassifierConstructedWithDocumentsTest.class
+        ClassifierConstructedWithDocumentsTest.class
 })
 public class JunitTestSuite {
 }

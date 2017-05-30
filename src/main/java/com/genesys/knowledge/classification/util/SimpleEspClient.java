@@ -1,7 +1,5 @@
 package com.genesys.knowledge.classification.util;
 
-import com.genesys.knowledge.domain.Category;
-import com.genesys.knowledge.domain.Document;
 import com.genesyslab.platform.commons.collections.KeyValueCollection;
 import com.genesyslab.platform.commons.connection.configuration.ConnectionConfiguration;
 import com.genesyslab.platform.commons.connection.configuration.KeyValueConfiguration;
@@ -14,19 +12,14 @@ import com.genesyslab.platform.commons.protocol.Message;
 import com.genesyslab.platform.commons.protocol.ProtocolException;
 import com.genesyslab.platform.openmedia.protocol.ExternalServiceProtocol;
 import com.genesyslab.platform.openmedia.protocol.externalservice.request.Request3rdServer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -202,87 +195,4 @@ public class SimpleEspClient {
         open();
         return connection;
     }
-
-
-    public static void main(String[] args) {
-        String url = "http://gks-dep-stbl:9092/gks-server/v1/kbs/langs/en/documents?tenantId=1&size=2000";
-        String knowledgeBase = "bank_of_america";
-        List<Document> documents = DocumentHandler.retrieveDocuments(url, knowledgeBase);
-
-        Collections.shuffle(documents, new SecureRandom());
-        List<Document> trainingDocuments = documents.subList(0, 4 * documents.size() / 5);
-        List<Document> testDocuments = documents.subList(4 * documents.size() / 5, documents.size());
-
-        SimpleEspClient client = new SimpleEspClient("gks-dep-stbl", 7102);
-        try {
-            client.open();
-            client.addTrainingEmails("0000MaCHTT6Q093H", trainingDocuments);
-            client.addTrainingEmails("0000MaCHTT6Q08QF", testDocuments);
-
-        } catch (InterruptedException | ProtocolException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                client.close();
-            } catch (ProtocolException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-	private  void getTrainingDataObjects() throws InterruptedException, ProtocolException {
-		Message trainingDataObjects = this.send("OMResponse", "GetTrainingDataObjects",
-					asKeyValueCollection("TenantId", 1),
-					null);
-		System.out.println(trainingDataObjects);
-	}
-
-	private void getTrainingEmails(String trainingDataObjectId) throws InterruptedException, ProtocolException {
-		Message trainingEmails = this.send("OMResponse", "GetTrainingEmails",
-					asKeyValueCollection("TrainingDataObjectId", trainingDataObjectId),
-					null);
-			System.out.println(trainingEmails);
-	}
-
-	private void addCategoryRoot() throws InterruptedException, ProtocolException {
-		this.send("OMResponse", "AddCategoryRoot",
-					asKeyValueCollection(
-							"Name", "testKnowledgeFaq",
-							"TenantId", 1,
-							"Language", "english",
-							"Status", "Approved",
-							"OwnerId", 100,
-							"Type", 1),
-					null);
-	}
-
-	private void addCategories(List<Document> documents) throws InterruptedException, ProtocolException {
-		for (Document document : documents) {
-				for (Category category : document.getCategories()) {
-					this.send("OMResponse", "AddCategory",
-							asKeyValueCollection(
-									"Id", category.getId(),
-									"CategoryParentId", "0000MaCHTT6Q0199",
-									"Name", category.getId(),
-									"Status", "Approved",
-									"OwnerId", 100,
-									"Type", 1),
-							null);
-				}
-		}
-	}
-
-	private void addTrainingEmails(String trainingDataObjectId, List<Document> documents) throws InterruptedException, ProtocolException {
-		for (Document document : documents) {
-				for (Category category : document.getCategories()) {
-					this.send("OMResponse", "AddTrainingEmail",
-							asKeyValueCollection("Subject", "",
-									"ReceivedDate", LocalDateTime.now().toString() + "Z",
-									"Text", document.getText(),
-									"CategoryId", category.getId(),
-									"TrainingDataObjectId", trainingDataObjectId),
-							null);
-				}
-		}
-	}
 }
