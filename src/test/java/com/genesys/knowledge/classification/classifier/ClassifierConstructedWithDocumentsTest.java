@@ -10,6 +10,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.security.SecureRandom;
 import java.util.*;
 
@@ -22,7 +24,6 @@ public class ClassifierConstructedWithDocumentsTest {
 
 	private List<Document> allDocuments;
 	Map<Document, List<String>> documentTokens;
-//	private String[] classifiers = {};
 
 	@Before
 	public void retrieveDocuments() {
@@ -41,11 +42,20 @@ public class ClassifierConstructedWithDocumentsTest {
 
 	private void prepareDocuments() {
 		allDocuments.removeIf(e -> (e.getText() == null));
-		System.out.println(allDocuments.size());
+		System.out.println("Number of documents: " + allDocuments.size());
 	}
 
 	@Test
 	public void testLogisticRegressionClassifier() {
+		testClassifier("com.genesys.knowledge.classification.classifier.LogisticRegressionClassifier");
+	}
+
+	@Test
+    public void testNaiveBayesClassifier() {
+		testClassifier("com.genesys.knowledge.classification.classifier.NaiveBayesClassifier");
+    }
+
+	private void testClassifier(String classifierName) {
 		Collections.shuffle(allDocuments, new SecureRandom());
 		List<Document> trainingDocuments = allDocuments.subList(0, 4 * allDocuments.size() / 5);
 		List<Document> testDocuments = allDocuments.subList(4 * allDocuments.size() / 5, allDocuments.size());
@@ -61,52 +71,14 @@ public class ClassifierConstructedWithDocumentsTest {
 		double avgPrecision = 0;
 
 		for (int run = 0; run < 50; run++) {
-			LogisticRegressionClassifier classifier = new LogisticRegressionClassifier(trainingDocuments);
+			AbstractClassifier classifier = createClassifierInstance(classifierName, trainingDocuments);
 			CategoryHandler categoryHandler = classifier.getCategoryHandler();
 			categoryHandler.clear();
 
-			// train
-			trainClassifier(classifier, trainingDocuments);
-
-			// evaluate
-			// 1
-			int numberOfCorrectClassificationsPerRun = evaluateBestConfidentCategoriesPrecision(classifier, testDocuments);
-			numberOfCorrectClassifications[numberOfCorrectClassificationsPerRun]++;
-			System.out.println(numberOfCorrectClassificationsPerRun);
-			// 2
-            evaluateAllConfidenceScoresPrecision(classifier, testDocuments, allConfidenceScoresStatistics);
-			// 3
-			double averagePrecision = evaluateAveragePrecision(classifier, testDocuments);
-			System.out.println(averagePrecision);
-			avgPrecision += averagePrecision;
-		}
-
-		// analyze evaluation
-		analyzeBestConfidentCategoriesPrecisionEvaluation(testDocuments.size(), numberOfCorrectClassifications);
-        analyzeAllConfidenceScoresPrecisionEvaluation(allConfidenceScoresStatistics);
-        analyzeAveragePrecisionEvaluation(avgPrecision);
-	}
-
-	@Test
-    public void testNaiveBayesClassifier() {
-		Collections.shuffle(allDocuments, new SecureRandom());
-		List<Document> trainingDocuments = allDocuments.subList(0, 4 * allDocuments.size() / 5);
-		List<Document> testDocuments = allDocuments.subList(4 * allDocuments.size() / 5, allDocuments.size());
-
-		// 1
-		int[] numberOfCorrectClassifications = new int[testDocuments.size() + 1];
-		// 2
-		List<List<Integer>> allConfidenceScoresStatistics = new ArrayList<>(101);
-		for (int i = 0; i <= 100; i++) {
-			allConfidenceScoresStatistics.add(Arrays.asList(0, 0));
-		}
-		// 3
-		double avgPrecision = 0;
-
-		for (int run = 0; run < 2; run++) {
-			NaiveBayesClassifier classifier = new NaiveBayesClassifier(trainingDocuments);
-//			CategoryHandler categoryHandler = classifier.getCategoryHandler();
-//			categoryHandler.clear();
+			if ("com.genesys.knowledge.classification.classifier.LogisticRegressionClassifier".equals(classifierName)) {
+				// train
+				trainClassifier((LogisticRegressionClassifier) classifier, trainingDocuments);
+			}
 
 			// evaluate
 			// 1
@@ -122,7 +94,31 @@ public class ClassifierConstructedWithDocumentsTest {
 		analyzeBestConfidentCategoriesPrecisionEvaluation(testDocuments.size(), numberOfCorrectClassifications);
 		analyzeAllConfidenceScoresPrecisionEvaluation(allConfidenceScoresStatistics);
 		analyzeAveragePrecisionEvaluation(avgPrecision);
-    }
+	}
+
+	private AbstractClassifier createClassifierInstance(String classifierName, List<Document> trainingDocuments) {
+		AbstractClassifier classifier = null;
+
+		try {
+			Class<?> classifierDefinition = AbstractClassifier.class.getClassLoader().loadClass(classifierName);
+			Class<?>[] argsClass = new Class<?>[]{List.class};
+			Constructor<?> argsConstructor = classifierDefinition.getConstructor(argsClass);
+			Object[] args = new Object[] {trainingDocuments};
+			classifier = (AbstractClassifier) argsConstructor.newInstance(args);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		}
+
+		return classifier;
+	}
 
 	private void trainClassifier(LogisticRegressionClassifier classifier, List<Document> trainingDocuments) {
 		for (int i = 0; i < 30; i++) {
@@ -132,7 +128,6 @@ public class ClassifierConstructedWithDocumentsTest {
 					classifier.train(documentTokens.get(trainingDoc), category, documentTokens.values());
 				}
 			}
-			System.out.println("Training lap done!");
 		}
 	}
 
