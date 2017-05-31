@@ -40,12 +40,19 @@ public class DocumentHandler {
         return responseMessage.getData().getDocuments();
     }
 
-    // TODO talk out exception handling: mb this method should throw them
-    public static List<String> convertTextToTokens(String text, TokenizerOption tokenizerOption) {
+    /**
+     * Converts the specified text into {@link List} of tokens using the specified type of a tokenizer.
+     * If {@code tokenizerType} is {@code null}, use the default type.
+     *
+     * @param text text to convert
+     * @param tokenizerType option that declare which type of tokenizer to use
+     * @return
+     */
+    public static List<String> convertTextToTokens(String text, TokenizerType tokenizerType) {
         List<String> resultTokens = new ArrayList<>();
 
         TokenStream tokenStream;
-        if ((tokenizerOption == null) || (tokenizerOption == TokenizerOption.FreeLingTokenizer)) {
+        if ((tokenizerType == null) || (tokenizerType == TokenizerType.FreeLingTokenizer)) {
             tokenStream = new FreeLingTokenizer(new StringReader(text),
                     "C:/freeling4-win64/data/",
                     "en", null, null, false);
@@ -68,7 +75,7 @@ public class DocumentHandler {
 
         tokenStream = new ICUFoldingFilter(tokenStream);
 
-        if (tokenizerOption == TokenizerOption.StandardTokenizer) {
+        if (tokenizerType == TokenizerType.StandardTokenizer) {
             tokenStream = new SnowballFilter(tokenStream, "English"); // stemming
         }
 
@@ -120,7 +127,7 @@ public class DocumentHandler {
         return uniqueCategories.size();
     }
 
-    public enum TokenizerOption {
+    public enum TokenizerType {
         StandardTokenizer,
         FreeLingTokenizer
     }
