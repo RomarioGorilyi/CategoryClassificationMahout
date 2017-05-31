@@ -48,8 +48,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
     }
 
     public LogisticRegressionClassifier(List<Document> documents) {
-        super();
-        getCategoryHandler().initHandler(documents);
+        super(documents);
 
         setClassifier(new OnlineLogisticRegression(
                 getCategoryHandler().getCategoriesQuantity(),
@@ -72,6 +71,9 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
      * Trains {@code this} classifier model with the specified {@code List<String>} of tokens and
      * the specified {@link Category}.
      *
+     * @param tokens tokens to utilize while training the model
+     * @param category category to map tokens
+     * @param documentTokens the util set of list of tokens to count weight of tokens
      * @return {@code this} LogisticRegressionClassifier
      */
     public LogisticRegressionClassifier train(List<String> tokens, Category category,
@@ -100,7 +102,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         // Look at the regression graph on the link below to see why we need the intercept.
         // http://statistiksoftware.blogspot.nl/2013/01/why-we-need-intercept.html
         for (String token : tokens) {
-            featureEncoder.addToVector(token, calcTokenWeight(token, tokens, documentTokens), outputVector);
+            featureEncoder.addToVector(token, 2, outputVector);
         }
         return outputVector;
     }
@@ -108,7 +110,7 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
     private double calcTokenWeight(String targetToken, List<String> tokens, Collection<List<String>> documentTokens) {
         Map<String, Double> tf = tf(tokens, TfIdf.TfType.BOOLEAN);
         Map<String, Double> idf = idf(documentTokens);
-        return tfIdf(tf, idf).get(targetToken);
+        return tfIdf(tf, idf, Normalization.COSINE).get(targetToken);
     }
 
     @Override

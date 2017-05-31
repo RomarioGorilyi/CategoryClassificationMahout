@@ -2,23 +2,19 @@ package com.genesys.knowledge.classification.classifier;
 
 import com.genesys.knowledge.classification.exception.CategoryNotFoundException;
 import com.genesys.knowledge.classification.util.CategoryHandler;
-import com.genesys.knowledge.classification.util.DocumentHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.mahout.classifier.AbstractVectorClassifier;
-import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.vectorizer.encoders.ConstantValueEncoder;
 import org.apache.mahout.vectorizer.encoders.FeatureVectorEncoder;
 import org.apache.mahout.vectorizer.encoders.StaticWordValueEncoder;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by rhorilyi on 25.04.2017.
@@ -31,7 +27,6 @@ public abstract class AbstractClassifier {
 
     @Getter @Setter
     private CategoryHandler categoryHandler;
-    private Map<Document, List<String>> documentTokens = new HashMap<>();
     @Getter @Setter
     private AbstractVectorClassifier classifier;
 
@@ -40,12 +35,12 @@ public abstract class AbstractClassifier {
     }
 
     public AbstractClassifier(AbstractVectorClassifier classifier) {
-        categoryHandler = new CategoryHandler();
+        this();
         this.classifier = classifier;
     }
 
-    public AbstractClassifier(AbstractVectorClassifier classifier, List<Document> documents) {
-        this(classifier);
+    public AbstractClassifier(List<Document> documents) {
+        this();
         categoryHandler.initHandler(documents);
     }
 

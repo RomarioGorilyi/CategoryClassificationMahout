@@ -1,7 +1,6 @@
 package com.genesys.knowledge.classification.classifier;
 
 import com.genesys.knowledge.classification.util.CategoryHandler;
-import com.genesys.knowledge.classification.util.DocumentHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import lombok.Getter;

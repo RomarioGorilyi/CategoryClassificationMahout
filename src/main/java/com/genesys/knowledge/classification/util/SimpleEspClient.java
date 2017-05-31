@@ -22,7 +22,6 @@ import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
 
-
 /**
  * Created by jbert002 on 16/05/2017.
  */
