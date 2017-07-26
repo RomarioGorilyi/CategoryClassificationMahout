@@ -1,5 +1,6 @@
 package com.genesys.knowledge.classification.classifier;
 
+import com.genesys.knowledge.classification.learner.Learner;
 import com.genesys.knowledge.classification.util.CategoryHandler;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
@@ -108,6 +109,12 @@ public class NaiveBayesClassifier extends AbstractClassifier {
         }
 
         return outputVector;
+    }
+
+    // TODO temporary method
+    @Override
+    public Vector getFeatureVector(Learner.Document document, List<Learner.Document> allDocuments) {
+        return null;
     }
 
     private static VectorWritable trainingInstance(Vector.Element... elems) {

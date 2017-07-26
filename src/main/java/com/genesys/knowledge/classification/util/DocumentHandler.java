@@ -1,8 +1,8 @@
 package com.genesys.knowledge.classification.util;
 
 import com.genesys.elasticsearch.index.analysis.tokenizers.FreeLingTokenizer;
+import com.genesys.knowledge.classification.learner.Learner;
 import com.genesys.knowledge.domain.Category;
-import com.genesys.knowledge.domain.Document;
 import com.genesys.knowledge.domain.ResponseMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.*;
@@ -27,7 +27,7 @@ import java.util.*;
 @Slf4j
 public class DocumentHandler {
 
-    public static List<Document> retrieveDocuments(String url, String knowledgeBase) {
+    public static List<com.genesys.knowledge.domain.Document> retrieveDocuments(String url, String knowledgeBase) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -98,12 +98,13 @@ public class DocumentHandler {
         return resultTokens;
     }
 
-    public static int findMaxNumberOfTokens(List<Document> documents) {
+    public static int findMaxNumberOfTokens(List<com.genesys.knowledge.domain.Document> documents) {
         int maxNumberOfTokens = 0;
 
-        for (Document document : documents) {
-            if (document.getText() != null) {
-                List<String> tokens = convertTextToTokens(document.getText(), null);
+        for (com.genesys.knowledge.domain.Document document : documents) {
+            String text = document.getText();
+            if (text != null) {
+                List<String> tokens = convertTextToTokens(text, null);
                 int tokensNumber = tokens.size();
                 if (tokensNumber > maxNumberOfTokens) {
                     maxNumberOfTokens = tokensNumber;
@@ -114,14 +115,42 @@ public class DocumentHandler {
         return maxNumberOfTokens;
     }
 
-    public static int findUniqueCategoriesNumber(List<Document> documents) {
+    public static int findMaxNumberOfTokens(ArrayList<Learner.Document> documents) {
+        int maxNumberOfTokens = 0;
+
+        for (Learner.Document document : documents) {
+            int titleLength = document.getTitle().getTokens().size();
+            if (titleLength > maxNumberOfTokens) {
+                maxNumberOfTokens = titleLength;
+            }
+            int bodyLength = document.getBody().getTokens().size();
+            if (bodyLength > maxNumberOfTokens) {
+                maxNumberOfTokens = bodyLength;
+            }
+        }
+
+        return maxNumberOfTokens;
+    }
+
+    public static int findUniqueCategoriesNumber(List<com.genesys.knowledge.domain.Document> documents) {
         Set<String> uniqueCategories = new HashSet<>();
 
-        for (Document document : documents) {
+        for (com.genesys.knowledge.domain.Document document : documents) {
             List<Category> categories = document.getCategories();
             for (Category category : categories) {
                 uniqueCategories.add(category.getId());
             }
+        }
+
+        return uniqueCategories.size();
+    }
+
+    public static int findUniqueCategoriesNumber(ArrayList<Learner.Document> documents) {
+        Set<String> uniqueCategories = new HashSet<>();
+
+        for (Learner.Document document : documents) {
+            List<String> categories = document.getCategories();
+            uniqueCategories.addAll(categories);
         }
 
         return uniqueCategories.size();

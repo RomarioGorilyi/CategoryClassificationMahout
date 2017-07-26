@@ -1,5 +1,6 @@
 package com.genesys.knowledge.classification.classifier;
 
+import com.genesys.knowledge.classification.exception.ClassifierNotTrainedException;
 import com.genesys.knowledge.classification.util.CategoryHandler;
 import com.genesys.knowledge.classification.util.DocumentHandler;
 import com.genesys.knowledge.domain.Category;
@@ -46,16 +47,16 @@ public class ClassifierConstructedWithDocumentsTest {
 	}
 
 	@Test
-	public void testLogisticRegressionClassifier() {
+	public void testLogisticRegressionClassifier() throws ClassifierNotTrainedException {
 		testClassifier("com.genesys.knowledge.classification.classifier.LogisticRegressionClassifier");
 	}
 
 	@Test
-    public void testNaiveBayesClassifier() {
+    public void testNaiveBayesClassifier() throws ClassifierNotTrainedException {
 		testClassifier("com.genesys.knowledge.classification.classifier.NaiveBayesClassifier");
     }
 
-	private void testClassifier(String classifierName) {
+	private void testClassifier(String classifierName) throws ClassifierNotTrainedException {
 		Collections.shuffle(allDocuments, new SecureRandom());
 		List<Document> trainingDocuments = allDocuments.subList(0, 4 * allDocuments.size() / 5);
 		List<Document> testDocuments = allDocuments.subList(4 * allDocuments.size() / 5, allDocuments.size());
@@ -132,12 +133,12 @@ public class ClassifierConstructedWithDocumentsTest {
 	}
 
     private int evaluateBestConfidentCategoriesPrecision(AbstractClassifier classifier,
-                                                         List<Document> documents) {
+                                                         List<Document> documents) throws ClassifierNotTrainedException {
         int numberOfCorrectClassificationsPerRun = 0;
 
         for (Document document : documents) {
 			List<String> tokens = convertTextToTokens(document.getText(), null);
-			String mostConfidentCategory = classifier.calcMostConfidentCategory(tokens, documentTokens.values());
+			String mostConfidentCategory = classifier.classifyDocumentWithMostConfidentCategory(tokens, documentTokens.values());
             List<Category> categories = document.getCategories();
             for (Category category : categories) {
                 if (mostConfidentCategory.equals(category.getId())) {
@@ -152,7 +153,7 @@ public class ClassifierConstructedWithDocumentsTest {
 
     private void evaluateAllConfidenceScoresPrecision(AbstractClassifier classifier,
                                                       List<Document> testDocuments,
-                                                      List<List<Integer>> statistics) {
+                                                      List<List<Integer>> statistics) throws ClassifierNotTrainedException {
         CategoryHandler categoryHandler = classifier.getCategoryHandler();
 
         for (Document document : testDocuments) {
@@ -171,7 +172,7 @@ public class ClassifierConstructedWithDocumentsTest {
     }
 
     private double evaluateAveragePrecision(AbstractClassifier classifier,
-                                            List<Document> testDocuments) {
+                                            List<Document> testDocuments) throws ClassifierNotTrainedException {
         double sumAvgPrecision = 0;
         CategoryHandler categoryHandler = classifier.getCategoryHandler();
 

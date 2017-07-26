@@ -1,5 +1,6 @@
 package com.genesys.knowledge.classification.classifier;
 
+import com.genesys.knowledge.classification.exception.ClassifierNotTrainedException;
 import com.genesys.knowledge.domain.Category;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +26,7 @@ public class LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest {
     }
 
     @Test
-    public void testTrainClassifierWithTwoDocs() {
+    public void testTrainClassifierWithTwoDocs() throws ClassifierNotTrainedException {
         List<List<String>> tokensList = new ArrayList<>();
 
         Category category1 = new Category("category1");
@@ -39,18 +40,18 @@ public class LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest {
         trainClassifier(tokens2, category2, tokensList);
 
         String expectedAlreadyTrainedDocumentCategory = category1.getId();
-        String actualAlreadyTrainedDocumentCategory = classifier.calcMostConfidentCategory(tokens1, tokensList);
+        String actualAlreadyTrainedDocumentCategory = classifier.classifyDocumentWithMostConfidentCategory(tokens1, tokensList);
         assertEquals(expectedAlreadyTrainedDocumentCategory, actualAlreadyTrainedDocumentCategory);
 
         List<String> testTokens = Arrays.asList("teach", "machine", "hobby");
         tokensList.add(testTokens);
         String expectedTestDocumentCategory = category1.getId();
-        String actualTestDocumentCategory = classifier.calcMostConfidentCategory(testTokens, tokensList);
+        String actualTestDocumentCategory = classifier.classifyDocumentWithMostConfidentCategory(testTokens, tokensList);
         assertEquals(expectedTestDocumentCategory, actualTestDocumentCategory);
     }
 
     @Test
-    public void testTrainClassifierWithOnlyOneDoc() {
+    public void testTrainClassifierWithOnlyOneDoc() throws ClassifierNotTrainedException {
         List<List<String>> tokensList = new ArrayList<>();
 
         Category category = new Category("category");
@@ -61,12 +62,12 @@ public class LrClassifierConstructedWithFixedCategoriesAndFeaturesNumbersTest {
         List<String> testTokens = Arrays.asList("teach", "machine", "hobby");
         tokensList.add(testTokens);
         String expectedTestDocumentCategory = category.getId();
-        String actualTestDocumentCategory = classifier.calcMostConfidentCategory(testTokens, tokensList);
+        String actualTestDocumentCategory = classifier.classifyDocumentWithMostConfidentCategory(testTokens, tokensList);
         assertEquals(expectedTestDocumentCategory, actualTestDocumentCategory);
     }
 
     @Test
-    public void testCalculateUnknownCategoryProbability() {
+    public void testCalculateUnknownCategoryProbability() throws ClassifierNotTrainedException {
         List<List<String>> tokensList = new ArrayList<>();
 
         Category category = new Category("category");

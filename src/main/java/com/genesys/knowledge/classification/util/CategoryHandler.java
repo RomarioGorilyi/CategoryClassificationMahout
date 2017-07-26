@@ -1,6 +1,7 @@
 package com.genesys.knowledge.classification.util;
 
 import com.genesys.knowledge.classification.exception.CategoryNotFoundException;
+import com.genesys.knowledge.classification.learner.Learner;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
 import com.google.common.collect.Maps;
@@ -32,6 +33,12 @@ public class CategoryHandler {
         }
     }
 
+    public void initHandler(ArrayList<Learner.Document> documents) {
+        for (Learner.Document document : documents) {
+            initHandler(document);
+        }
+    }
+
     /**
      * Initializes {@code this} CategoriesHandler with categories retrieved from the specified document.
      */
@@ -39,6 +46,13 @@ public class CategoryHandler {
         List<Category> categories = document.getCategories();
         for (Category category : categories) {
             this.addCategory(category);
+        }
+    }
+
+    public void initHandler(Learner.Document document) {
+        List<String> categories = document.getCategories();
+        for (String categoryId : categories) {
+            this.addCategory(new Category(categoryId));
         }
     }
 

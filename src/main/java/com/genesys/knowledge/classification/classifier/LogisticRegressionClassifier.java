@@ -1,12 +1,15 @@
 package com.genesys.knowledge.classification.classifier;
 
+import com.genesys.knowledge.classification.classifier.feature.FeatureVectorHandlerImpl;
 import com.genesys.knowledge.classification.defaults.ClassifierDefaults;
 import com.genesys.knowledge.classification.defaults.LogisticRegressionDefaults;
 import com.genesys.knowledge.classification.exception.CategoryNotFoundException;
+import com.genesys.knowledge.classification.learner.Learner;
 import com.genesys.knowledge.classification.util.DocumentHandler;
 import com.genesys.knowledge.classification.util.TfIdf;
 import com.genesys.knowledge.domain.Category;
 import com.genesys.knowledge.domain.Document;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.mahout.classifier.sgd.L2;
 import org.apache.mahout.classifier.sgd.OnlineLogisticRegression;
@@ -18,6 +21,7 @@ import org.apache.mahout.vectorizer.encoders.FeatureVectorEncoder;
 import org.apache.mahout.vectorizer.encoders.StaticWordValueEncoder;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +34,9 @@ import static com.genesys.knowledge.classification.util.TfIdf.*;
 @Slf4j
 public class LogisticRegressionClassifier extends AbstractClassifier {
 
+    @Getter
     private final ConstantValueEncoder interceptEncoder = new ConstantValueEncoder("intercept");
+    @Getter
     private final FeatureVectorEncoder featureEncoder = new StaticWordValueEncoder("feature");
 
     public LogisticRegressionClassifier() {
@@ -48,6 +54,21 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
     }
 
     public LogisticRegressionClassifier(List<Document> documents) {
+        super(documents);
+
+        setClassifier(new OnlineLogisticRegression(
+                getCategoryHandler().getCategoriesQuantity(),
+                DocumentHandler.findMaxNumberOfTokens(documents),
+                new L2())
+                .learningRate(LogisticRegressionDefaults.DEFAULT_LR_LEARNING_RATE)
+                .alpha(LogisticRegressionDefaults.DEFAULT_LR_ALPHA)
+                .lambda(LogisticRegressionDefaults.DEFAULT_LR_LAMBDA)
+                .stepOffset(LogisticRegressionDefaults.DEFAULT_LR_STEP_OFFSET)
+                .decayExponent(LogisticRegressionDefaults.DEFAULT_LR_DECAY_EXPONENT)
+        );
+    }
+
+    public LogisticRegressionClassifier(ArrayList<Learner.Document> documents) {
         super(documents);
 
         setClassifier(new OnlineLogisticRegression(
@@ -82,6 +103,17 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         return this;
     }
 
+    public LogisticRegressionClassifier train(Learner.Document document, Category category,
+                                              List<Learner.Document> allDocuments) {
+        trainOnlineLogisticRegression(document, category, allDocuments);
+        return this;
+    }
+
+    public LogisticRegressionClassifier train(Learner.Document document, String categoryId,
+                                              List<Learner.Document> allDocuments) {
+        return train(document, new Category(categoryId), allDocuments);
+    }
+
     private void trainOnlineLogisticRegression(List<String> tokens, Category category,
                                                Collection<List<String>> documentTokens) {
         int categoryOrderNumber;
@@ -92,6 +124,20 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
             categoryOrderNumber = getCategoryHandler().getCategoriesQuantity() - 1;
         }
         ((OnlineLogisticRegression) getClassifier()).train(categoryOrderNumber, getFeatureVector(tokens, documentTokens));
+        setTrained(true);
+    }
+
+    private void trainOnlineLogisticRegression(Learner.Document document, Category category,
+                                               List<Learner.Document> allDocuments) {
+        int categoryOrderNumber;
+        try {
+            categoryOrderNumber = getCategoryHandler().getCategoryOrderNumber(category);
+        } catch (CategoryNotFoundException e) {
+            getCategoryHandler().addCategory(category);
+            categoryOrderNumber = getCategoryHandler().getCategoriesQuantity() - 1;
+        }
+        ((OnlineLogisticRegression) getClassifier()).train(categoryOrderNumber, getFeatureVector(document, allDocuments));
+        setTrained(true);
     }
 
     @Override
@@ -107,11 +153,16 @@ public class LogisticRegressionClassifier extends AbstractClassifier {
         return outputVector;
     }
 
-    private double calcTokenWeight(String targetToken, List<String> tokens, Collection<List<String>> documentTokens) {
-        Map<String, Double> tf = tf(tokens, TfIdf.TfType.BOOLEAN);
-        Map<String, Double> idf = idf(documentTokens);
-        return tfIdf(tf, idf, Normalization.COSINE).get(targetToken);
+    @Override
+    public Vector getFeatureVector(Learner.Document document, List<Learner.Document> allDocuments) {
+        return new FeatureVectorHandlerImpl().getFeatureVector(this, document, allDocuments);
     }
+
+//    private double calcTokenWeight(String targetToken, List<String> tokens, Collection<List<String>> documentTokens) {
+//        Map<String, Double> tf = tf(tokens, TfIdf.TfType.BOOLEAN);
+//        Map<String, Double> idf = idf(documentTokens);
+//        return tfIdf(tf, idf, Normalization.COSINE).get(targetToken);
+//    }
 
     @Override
     public byte[] serializeModel() {
